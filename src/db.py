@@ -1,7 +1,8 @@
 import sqlite3
 
 # Variables globables
-DB_NAME = 'escuela.db'
+# Se supone que esto se ejecuta desde el main.py
+DB_NAME = './database/escuela.db'
 
 # Función para conectar a la base de datos SQLite
 def db_open():
@@ -15,6 +16,26 @@ def fetch_students_table():
     cursor = conn.cursor()
     cursor.execute(
         "CREATE TABLE IF NOT EXISTS students (username INTEGER PRIMARY KEY, password TEXT, first_name TEXT, last_name TEXT, nationality TEXT, email TEXT)"
+    )
+    conn.commit()
+    conn.close()
+
+# Función para crear la tabla de maestros si no existe
+def fetch_teachers_table():
+    conn = db_open()
+    cursor = conn.cursor()
+    cursor.execute(
+        "CREATE TABLE IF NOT EXISTS teachers (username INTEGER PRIMARY KEY, password TEXT, first_name TEXT, last_name TEXT, nationality TEXT, email TEXT)"
+    )
+    conn.commit()
+    conn.close()
+
+# Función para crear la tabla de preceptores si no existe
+def fetch_tutors_table():
+    conn = db_open()
+    cursor = conn.cursor()
+    cursor.execute(
+        "CREATE TABLE IF NOT EXISTS tutors (username INTEGER PRIMARY KEY, password TEXT, first_name TEXT, last_name TEXT, nationality TEXT, email TEXT)"
     )
     conn.commit()
     conn.close()

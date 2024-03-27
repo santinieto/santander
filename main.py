@@ -2,10 +2,10 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 import sqlite3
-from db import *
-from open_meteo import *
-from utils import *
-from models import *
+from src.db import *
+from src.open_meteo import *
+from src.utils import *
+from src.models import *
 
 # Creación de la aplicación FastAPI
 app = FastAPI()

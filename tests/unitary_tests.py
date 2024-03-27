@@ -2,7 +2,7 @@ import unittest
 import requests
 import http.client
 import json
-from utils import create_student
+from src.utils import create_student
 
 class UnitTest(unittest.TestCase):
 

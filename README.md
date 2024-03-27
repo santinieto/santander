@@ -5,6 +5,7 @@
 - open_meteo.py: Archivo que consume la API de Open Meteo.
 - unitary_tests.py: Archivo donde se definen los tests unitarios para los metodos.
 - utils.py: Archivo donde se definen todos los metodos que son de utilidad para el proyecto.
+- escuela.db: Archivo que contiene la base de datos del proyecto.
 - README.md: Este archivo
 
 # Ejecucion del servidor
