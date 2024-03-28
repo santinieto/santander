@@ -40,6 +40,14 @@ def fetch_tutors_table():
     conn.commit()
     conn.close()
     
+def get_all_students():
+    conn = db_open()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM students")
+    students = cursor.fetchall()
+    conn.close()
+    return students
+    
 # Funcion para obtener los datos de un studiante
 def get_student(username):
     conn = db_open()
@@ -50,3 +58,52 @@ def get_student(username):
     student = cursor.fetchall()
     conn.close()
     return student
+
+# Agregar un estudiante
+def add_student(username, password, first_name, last_name, nationality, email):
+    # Abro la conexion con la vase de datos
+    conn = db_open()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO students (username, password, first_name, last_name, nationality, email) VALUES (?, ?, ?, ?, ?, ?)",
+        (username, password, first_name, last_name, nationality, email)
+    )
+    # Guardo los cambios y cierro la conexion
+    conn.commit()
+    conn.close()
+
+# Función para crear la tabla de asistencias
+def fetch_asistance_table():
+    conn = db_open()
+    cursor = conn.cursor()
+    cursor.execute(
+        "CREATE TABLE IF NOT EXISTS asistance (date INTEGER, username INTEGER, present BOOL)"
+    )
+    conn.commit()
+    conn.close()
+    
+# Agregar un registro de asistencia
+def register_student_asistance(date, username, present):
+    # Abro la conexion con la vase de datos
+    conn = db_open()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO asistance (date, username, present) VALUES (?, ?, ?)",
+        (date, username, present)
+    )
+    # Guardo los cambios y cierro la conexion
+    conn.commit()
+    conn.close()
+    
+# Agregar un estudiante
+def add_student(username, password, first_name, last_name, nationality, email):
+    # Abro la conexion con la vase de datos
+    conn = db_open()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO students (username, password, first_name, last_name, nationality, email) VALUES (?, ?, ?, ?, ?, ?)",
+        (username, password, first_name, last_name, nationality, email)
+    )
+    # Guardo los cambios y cierro la conexion
+    conn.commit()
+    conn.close()

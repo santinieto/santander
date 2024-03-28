@@ -2,6 +2,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 import sqlite3
+import random
 from src.db import *
 from src.open_meteo import *
 from src.utils import *
@@ -29,22 +30,11 @@ def create_student(student: Student):
     nationality = student.nationality
     email = student.email
     
-    # Abro la conexion con la vase de datos
-    conn = db_open()
-    cursor = conn.cursor()
-    
     # Verificar que existe la tabla de estudiantes
     fetch_students_table()
     
     # Agregar el alumno
-    cursor.execute(
-        "INSERT INTO students (username, password, first_name, last_name, nationality, email) VALUES (?, ?, ?, ?, ?, ?)",
-        (username, password, first_name, last_name, nationality, email)
-    )
-    
-    # Guardo los cambios y cierro la conexion
-    conn.commit()
-    conn.close()
+    add_student(username, password, first_name, last_name, nationality, email)
     
     # Devuelvo el JSON
     return {"username": username, "password": password, "first_name": first_name, "last_name": last_name, "nationality": nationality, "email": email}
@@ -56,27 +46,46 @@ def get_student_data():
     return student
 
 # Veo la lista de estudiantes
-@app.get("/students/")
-def get_all_students():
-    conn = db_open()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM students")
-    students = cursor.fetchall()
-    conn.close()
+@app.get("/view_students/")
+def view_students():
+    students = get_all_students()
     return [dict(student) for student in students]
 
-# Agrego la informacion de una fecha
-@app.get('/add_date/')
-def add_date():
+# Registrar asistencia
+@app.get("/register_asistance/")
+def register_asistance():
     # Obtengo la fecha
     date = get_formatted_date()
     # Obtengo la informacion del clima
     temp = Temperature()
     temp.fetch_data()
     rain = temp.last_rain
+    
+    # Voy a suponer que los estudiantes de alguna forma
+    # registraron su asistencia
+    students_list = [row["username"] for row in get_all_students()]    
+    # Probabilidad de True (70%) y False (30%)
+    probabilidades = [True, False]
+    probabilidades_pesos = [0.7, 0.3]
+    # Asignar True o False a cada nombre con las probabilidades dadas
+    resultados = random.choices(probabilidades, weights=probabilidades_pesos, k=len(students_list))
+    # Crear un diccionario con los nombres y sus valores asignados
+    resultados_dict = dict(zip(students_list, resultados))
+    
+    # Verifico que existe la tabla de asistencia
+    fetch_asistance_table()
+
     # Lista de alumnos presentes
-    present_students = []
+    present_students = [nombre for nombre, valor in resultados_dict.items() if valor]
+    # Registro la lista de presentes
+    for username in present_students:
+        register_student_asistance(date, username, 1)
+    
     # Lista de alumnos ausentes
-    absent_students = []
+    absent_students = [nombre for nombre, valor in resultados_dict.items() if not valor]
+    # Registro la lista de ausentes
+    for username in present_students:
+        register_student_asistance(date, username, 0)
+    
     # Devuelvo los datos
     return {"date": date, "rain": rain, "present_students": present_students, "absent_students": absent_students}

@@ -1,12 +1,15 @@
 # Archivos
 - main.py: Archivo base que aloja el servidor y sus rutas.
-- db.py: Archivo que contiene los metodos para operar con la base de datos.
-- models.py: Archivo donde se definen los modelos que se utilizan dentro del proyeto.
-- open_meteo.py: Archivo que consume la API de Open Meteo.
-- unitary_tests.py: Archivo donde se definen los tests unitarios para los metodos.
-- utils.py: Archivo donde se definen todos los metodos que son de utilidad para el proyecto.
-- escuela.db: Archivo que contiene la base de datos del proyecto.
 - README.md: Este archivo
+
+- database/db.py: Archivo que contiene los metodos para operar con la base de datos.
+
+- src/models.py: Archivo donde se definen los modelos que se utilizan dentro del proyeto.
+- src/open_meteo.py: Archivo que consume la API de Open Meteo.
+- src/utils.py: Archivo donde se definen todos los metodos que son de utilidad para el proyecto.
+- src/escuela.db: Archivo que contiene la base de datos del proyecto.
+
+- tests/unitary_tests.py: Archivo donde se definen los tests unitarios para los metodos.
 
 # Ejecucion del servidor
 1. El usuario de ubicarse en el path donde se encuentre el archivo main.py y ejecutar el siguiente comando:
@@ -23,8 +26,7 @@ Para llevar adelante este proyecto se utiliza el framework FastAPI el cual facil
 - "/": Muestra el mensaje de sanidad del servidor.
 - "/add_student/": Agrega estudiantes al curso en cuestion.
 - "/get_student/": Obtiene la informacion de un estudiante en particular.
-- "/students/": Obtiene la informacion de todos los estudiantes del curso.
-- "/add_date/": Obtiene la informacion del estado del clima para el dia de la fecha
+- "/view_students/": Obtiene la informacion de todos los estudiantes del curso.
 - "/generate_daily_report/": Obtiene las estadisticas de asistencia para el dia en curso.
 - "/register_asistance/": Registra la asistencia para el dia de la fecha.
 - "/view_absents/": Muestra la lista historica de ausencias del curso para todos o algunos estudiantes.
