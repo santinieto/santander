@@ -40,10 +40,26 @@ def create_student(student: Student):
     return {"username": username, "password": password, "first_name": first_name, "last_name": last_name, "nationality": nationality, "email": email}
 
 # Ver los datos de un estudiante
+# http://localhost:8000/get_student?username=johndoe&password=123456
+# http://localhost:8000/get_student?username=64606130&password=123456
+# http://localhost:8000/get_student?username=64606130&password=%oFUHmJC
 @app.get("/get_student/")
-def get_student_data():
-    student = get_student(39374486)
-    return student
+def get_student_data(username: str, password: str):
+    
+    # Verifico que el usuario existe en la base de datos
+    student = get_student(username)
+    
+    # Verifico que la contraseña sea correcta
+    if (student is None) or (student['password'] != password):
+        return {"message": "Usuario o contraseña incorrectos"}
+    
+    else:
+        return {
+            "Usuario": student['username'],
+            "Nombre": f"{student['first_name']} {student['last_name']}",
+            "Nacionalidad": student['nationality'],
+            "Correo electronico:": student['email'],
+            }
 
 # Veo la lista de estudiantes
 @app.get("/view_students/")
@@ -63,7 +79,7 @@ def register_asistance():
     
     # Voy a suponer que los estudiantes de alguna forma
     # registraron su asistencia
-    students_list = [row["username"] for row in get_all_students()]    
+    students_list = [row["username"] for row in get_all_students()]
     # Probabilidad de True (70%) y False (30%)
     probabilidades = [True, False]
     probabilidades_pesos = [0.7, 0.3]

@@ -52,10 +52,13 @@ def get_all_students():
 def get_student(username):
     conn = db_open()
     cursor = conn.cursor()
-    cursor.execute(
-        "SELECT * FROM students WHERE username = {}".format(username)
-    )
-    student = cursor.fetchall()
+    try:
+        cursor.execute(
+            "SELECT * FROM students WHERE username = {}".format(username)
+        )
+        student = cursor.fetchall()[0]
+    except:
+        student = None
     conn.close()
     return student
 
