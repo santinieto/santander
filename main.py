@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 import sqlite3
 import random
+import os
 from src.db import *
 from src.open_meteo import *
 from src.utils import *
@@ -14,11 +15,59 @@ app = FastAPI()
 # Para ejecutar el servidor
 # uvicorn main:app --reload
 
-# Rutas de FastAPI
+# Variables globables
+os.environ["USER_AUTHENTICATED"] = 'False'
+os.environ["USER_USERNAME"] = ''
+os.environ["USER_ROLE"] = ''
+
+############################################################################
+# Ruta de sanidad
+############################################################################
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
 
+############################################################################
+# Ruta de logeo
+############################################################################
+# http://localhost:8000/login?username=1234&password=1234
+# http://localhost:8000/login?username=38846700&password=ARLhIkRd
+# http://localhost:8000/login?username=15947788&password=HKwN5U1N
+@app.get("/login/")
+def login(username: str, password: str):
+    
+    # Si ya hay una sesion iniciada primero hay que cerrarla:
+    if os.environ["USER_AUTHENTICATED"] == 'True':
+        return {'message', 'Ya hay una sesion iniciada. Debe cerrarla para poder ingresar a otra cuenta'}
+    
+    # Verifico si es un estudiante
+    if is_valid_student(username, password) is True:
+        os.environ["USER_AUTHENTICATED"] = 'True'
+        os.environ["USER_USERNAME"] = username
+        os.environ["USER_ROLE"] = 'student'
+        return{'message': f'Bienvenido estudiante {os.environ["USER_USERNAME"]}'}
+        
+    if is_valid_teacher(username, password) is True:
+        os.environ["USER_AUTHENTICATED"] = 'True'
+        os.environ["USER_USERNAME"] = username
+        os.environ["USER_ROLE"] = 'teacher'
+        return{'message': f'Bienvenido profesor {os.environ["USER_USERNAME"]}'}
+        
+    return{'message': 'Usuario o contraseña incorrectos'}
+
+@app.get("/logoff/")
+def login():
+    if os.environ["USER_AUTHENTICATED"] == 'False':
+        return {'message': 'No se ha iniciado sesion'}
+    else:
+        os.environ["USER_AUTHENTICATED"] = 'False'
+        os.environ["USER_USERNAME"] = ''
+        os.environ["USER_ROLE"] = ''
+        return {'message': 'Se ha cerrado la sesion'}
+
+############################################################################
+# Gestion de estudiantes
+############################################################################
 # Agrego un estudiante
 @app.post("/add_student/")
 def create_student(student: Student):
@@ -40,18 +89,28 @@ def create_student(student: Student):
     return {"username": username, "password": password, "first_name": first_name, "last_name": last_name, "nationality": nationality, "email": email}
 
 # Ver los datos de un estudiante
-# http://localhost:8000/get_student?username=johndoe&password=123456
-# http://localhost:8000/get_student?username=64606130&password=123456
-# http://localhost:8000/get_student?username=64606130&password=%oFUHmJC
+# http://localhost:8000/get_student?username=38846700
 @app.get("/get_student/")
-def get_student_data(username: str, password: str):
+def get_student_data(username: str):
     
+    # Verifico si el usuario puede ver la informacion
+    valid = False
+    if os.environ["USER_AUTHENTICATED"] is False:
+        return {"message": "Debe iniciar sesion para acceder a los datos"}
+    if os.environ["USER_ROLE"] in ['teacher', 'tutor']:
+        valid = True
+    if os.environ["USER_ROLE"] == 'student' and os.environ["USER_USERNAME"] == username:
+        valid = True
+        
+    if valid is False:
+        return {"message": "Acceso denegado"}
+
     # Verifico que el usuario existe en la base de datos
     student = get_student(username)
     
     # Verifico que la contraseña sea correcta
-    if (student is None) or (student['password'] != password):
-        return {"message": "Usuario o contraseña incorrectos"}
+    if student is None:
+        return {"message": "Estudiante no encontrado"}
     
     else:
         return {
@@ -64,12 +123,24 @@ def get_student_data(username: str, password: str):
 # Veo la lista de estudiantes
 @app.get("/view_students/")
 def view_students():
+    
+    # Verifico si el usuario puede ver la informacion
+    if os.environ["USER_AUTHENTICATED"] is False:
+        return {"message": "Debe iniciar sesion para acceder a los datos"}
+    
     students = get_all_students()
     return [dict(student) for student in students]
 
 # Registrar asistencia
 @app.get("/register_asistance/")
 def register_asistance():
+    
+    # Verifico si el usuario puede ver la informacion
+    if os.environ["USER_AUTHENTICATED"] is False:
+        return {"message": "Debe iniciar sesion para acceder a los datos"}
+    if os.environ["USER_ROLE"] in ['student']:
+        return {"message": "El registro de asistencia solo puede ser realizado por profesores o preceptores"}
+    
     # Obtengo la fecha
     date = get_formatted_date()
     # Obtengo la informacion del clima
@@ -105,3 +176,26 @@ def register_asistance():
     
     # Devuelvo los datos
     return {"date": date, "rain": rain, "present_students": present_students, "absent_students": absent_students}
+
+############################################################################
+# Gestion de profesores
+############################################################################
+# Agrego un estudiante
+@app.post("/add_teacher/")
+def create_teacher(student: Student):
+    # Obtener los datos del estudiante del modelo Pydantic
+    username = student.username
+    password = student.password
+    first_name = student.first_name
+    last_name = student.last_name
+    nationality = student.nationality
+    email = student.email
+    
+    # Verificar que existe la tabla de estudiantes
+    fetch_teachers_table()
+    
+    # Agregar el alumno
+    add_teacher(username, password, first_name, last_name, nationality, email)
+    
+    # Devuelvo el JSON
+    return {"username": username, "password": password, "first_name": first_name, "last_name": last_name, "nationality": nationality, "email": email}

@@ -10,51 +10,51 @@ def get_formatted_date():
 # Generador de contrasenias
 def generate_password(length=8):
     """Genera una contraseña aleatoria."""
-    characters = string.ascii_letters + string.digits + string.punctuation
+    characters = string.ascii_letters + string.digits
     password = ''.join(random.choice(characters) for i in range(length))
     return password
 
 # Genero un alumno aleatorio
-def create_student():
+def new_user():
     fake = Faker()
 
     # Generar un nombre aleatorio
-    student_first_name = fake.first_name()
+    user_first_name = fake.first_name()
 
     # Generar un apellido aleatorio
-    student_last_name = fake.last_name()
+    user_last_name = fake.last_name()
     
     # Genero el email
-    student_email = '{}.{}@school.com'.format(student_first_name.lower(), student_last_name.lower())
+    user_email = '{}.{}@school.com'.format(user_first_name.lower(), user_last_name.lower())
     
     # Fuerzo la nacionalidad argentina
-    student_nationalilty = 'arg'
+    user_nationalilty = 'arg'
     
     # Generar un número aleatorio para el DNI
-    student_dni = random.randint(10000000, 90000000)
+    user_dni = random.randint(10000000, 90000000)
     
     # Genero una contrasenia
-    student_password = generate_password()
+    user_password = generate_password()
 
     # Muestro los datos del estudiante
-    print("Nombre:", student_first_name)
-    print("Apellido:", student_last_name)
-    print("Email:", student_email)
-    print('Nacionalidad:', student_nationalilty)
-    print("DNI:", student_dni)
-    print("Contrasenia:", student_password)
+    print("Nombre:", user_first_name)
+    print("Apellido:", user_last_name)
+    print("Email:", user_email)
+    print('Nacionalidad:', user_nationalilty)
+    print("DNI:", user_dni)
+    print("Contrasenia:", user_password)
     
     # Datos del estudiante
-    student_data = {
-        "username": student_dni,
-        "password": student_password,
-        "first_name": student_first_name,
-        "last_name": student_last_name,
-        "nationality": student_nationalilty,
-        "email": student_email
+    user_data = {
+        "username": user_dni,
+        "password": user_password,
+        "first_name": user_first_name,
+        "last_name": user_last_name,
+        "nationality": user_nationalilty,
+        "email": user_email
     }
     
-    return student_data
+    return user_data
     
 if __name__ == "__main__":
-    create_student()
+    new_user()

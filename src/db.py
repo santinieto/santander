@@ -43,7 +43,7 @@ def fetch_tutors_table():
 def get_all_students():
     conn = db_open()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM students")
+    cursor.execute("SELECT username, first_name, last_name, nationality, email FROM students")
     students = cursor.fetchall()
     conn.close()
     return students
@@ -99,14 +99,54 @@ def register_student_asistance(date, username, present):
     conn.close()
     
 # Agregar un estudiante
-def add_student(username, password, first_name, last_name, nationality, email):
+def add_teacher(username, password, first_name, last_name, nationality, email):
     # Abro la conexion con la vase de datos
     conn = db_open()
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO students (username, password, first_name, last_name, nationality, email) VALUES (?, ?, ?, ?, ?, ?)",
+        "INSERT INTO teachers (username, password, first_name, last_name, nationality, email) VALUES (?, ?, ?, ?, ?, ?)",
         (username, password, first_name, last_name, nationality, email)
     )
     # Guardo los cambios y cierro la conexion
     conn.commit()
     conn.close()
+    
+def is_valid_student(username, password):
+    # Abro la conexión con la base de datos
+    conn = db_open()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT username FROM students WHERE username = ? AND password = ?", (username, password)
+        )
+        # Compruebo si hay alguna fila coincidente
+        if cursor.fetchone():
+            return True
+        else:
+            return False
+    except Exception as e:
+        print("Error al ejecutar la consulta:", e)
+        return False
+    finally:
+        # Cierro la conexión con la base de datos
+        conn.close()
+
+def is_valid_teacher(username, password):
+    # Abro la conexión con la base de datos
+    conn = db_open()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT username FROM teachers WHERE username = ? AND password = ?", (username, password)
+        )
+        # Compruebo si hay alguna fila coincidente
+        if cursor.fetchone():
+            return True
+        else:
+            return False
+    except Exception as e:
+        print("Error al ejecutar la consulta:", e)
+        return False
+    finally:
+        # Cierro la conexión con la base de datos
+        conn.close()
