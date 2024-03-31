@@ -80,24 +80,41 @@ def fetch_asistance_table():
     conn = db_open()
     cursor = conn.cursor()
     cursor.execute(
-        "CREATE TABLE IF NOT EXISTS asistance (date INTEGER, username INTEGER, present BOOL)"
+        "CREATE TABLE IF NOT EXISTS asistance (date INTEGER, username INTEGER, present BOOL, justification TEXT)"
     )
     conn.commit()
     conn.close()
     
 # Agregar un registro de asistencia
-def register_student_asistance(date, username, present):
+def register_student_asistance(date, username, present, justification):
     # Abro la conexion con la vase de datos
     conn = db_open()
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO asistance (date, username, present) VALUES (?, ?, ?)",
-        (date, username, present)
+        "INSERT INTO asistance (date, username, present, justification) VALUES (?, ?, ?, ?)",
+        (date, username, present, justification)
     )
     # Guardo los cambios y cierro la conexion
     conn.commit()
     conn.close()
-    
+
+# Obtengo la lista de inasistencias de un estudiante
+def get_student_asistance(username):
+    # Abro la conexión con la base de datos
+    conn = db_open()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT * FROM asistance WHERE username = ?", (username,)
+        )
+        return cursor.fetchall()
+    except Exception as e:
+        print("Error al ejecutar la consulta:", e)
+        return False
+    finally:
+        # Cierro la conexión con la base de datos
+        conn.close()
+
 # Agregar un estudiante
 def add_teacher(username, password, first_name, last_name, nationality, email):
     # Abro la conexion con la vase de datos

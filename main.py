@@ -108,6 +108,8 @@ def get_student_data(username: str):
     # Verifico que el usuario existe en la base de datos
     student = get_student(username)
     
+    n_prensent, n_absent, present_rate, absent_dates = calc_student_asistance(username)
+    
     # Verifico que la contraseña sea correcta
     if student is None:
         return {"message": "Estudiante no encontrado"}
@@ -118,6 +120,10 @@ def get_student_data(username: str):
             "Nombre": f"{student['first_name']} {student['last_name']}",
             "Nacionalidad": student['nationality'],
             "Correo electronico:": student['email'],
+            "Cantidad de dias presentes": n_prensent,
+            "Cantidad de asusencias": n_absent,
+            "Porcentaje de asistencias": present_rate,
+            "Fechas de ausencias": absent_dates,
             }
 
 # Veo la lista de estudiantes
@@ -129,7 +135,18 @@ def view_students():
         return {"message": "Debe iniciar sesion para acceder a los datos"}
     
     students = get_all_students()
-    return [dict(student) for student in students]
+    
+    students_list = []
+    for student in students:
+        student = dict(student)
+        n_prensent, n_absent, present_rate, absent_dates = calc_student_asistance(student['username'])
+        student['n_prensent'] = n_prensent
+        student['n_absent'] = n_absent
+        student['present_rate'] = present_rate
+        student['absent_dates'] = absent_dates
+        students_list.append( student )
+        
+    return students_list
 
 # Registrar asistencia
 @app.get("/register_asistance/")
@@ -166,13 +183,16 @@ def register_asistance():
     present_students = [nombre for nombre, valor in resultados_dict.items() if valor]
     # Registro la lista de presentes
     for username in present_students:
-        register_student_asistance(date, username, 1)
+        register_student_asistance(date, username, 1, '-')
     
     # Lista de alumnos ausentes
     absent_students = [nombre for nombre, valor in resultados_dict.items() if not valor]
+    justificacion = '-'
+    if rain:
+        justificacion = 'Dia lluvioso'
     # Registro la lista de ausentes
     for username in present_students:
-        register_student_asistance(date, username, 0)
+        register_student_asistance(date, username, 0, justificacion)
     
     # Devuelvo los datos
     return {"date": date, "rain": rain, "present_students": present_students, "absent_students": absent_students}

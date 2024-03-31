@@ -3,9 +3,22 @@ from faker import Faker
 import random
 import string
 
+import sys
+sys.path.append('./src')
+
+from db import get_student_asistance
+
 # Obtener la fecha y hora actual
 def get_formatted_date():
     return datetime.now().date().strftime("%Y%m%d")
+
+# Función para convertir formato YYYYMMDD a DD/MM/YYYY
+def transform_to_date(date):
+    # Convierte la fecha de formato YYYYMMDD a un objeto datetime
+    new_date = datetime.strptime(str(date), "%Y%m%d")
+    # Formatea la fecha en el formato DD/MM/YYYY
+    new_date = new_date.strftime("%d/%m/%Y")
+    return new_date
 
 # Generador de contrasenias
 def generate_password(length=8):
@@ -55,6 +68,14 @@ def new_user():
     }
     
     return user_data
-    
+
+def calc_student_asistance(student):
+    data = get_student_asistance(student)
+    absent_dates = [transform_to_date(row['date']) for row in data if row['present'] == 0]
+    n_absent = len(absent_dates)
+    n_prensent = len(data) - n_absent
+    present_rate = n_prensent / len(data) * 100.0
+    return n_prensent, n_absent, present_rate, absent_dates
+
 if __name__ == "__main__":
     new_user()
