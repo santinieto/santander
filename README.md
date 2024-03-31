@@ -24,6 +24,8 @@ Para llevar adelante este proyecto se utiliza el framework FastAPI el cual facil
 
 # URLs del proyecto
 - "/": Muestra el mensaje de sanidad del servidor.
+- "/login/": URL para el inicio de sesion.
+- "/logoff/": URL para cerrar la sesion.
 - "/add_student/": Agrega estudiantes al curso en cuestion.
 - "/get_student/": Obtiene la informacion de un estudiante en particular.
 - "/view_students/": Obtiene la informacion de todos los estudiantes del curso.
@@ -33,4 +35,25 @@ Para llevar adelante este proyecto se utiliza el framework FastAPI el cual facil
 - "":
 - "":
 
-# Pruebas unitarias
+# Variables de entorno y sistema de logeo
+Para poder visualizar la informacion de la escuela lo primero que debe hacerse es logearse, existen a priori los siguientes roles:
+1. student
+2. tutor
+3. teacher
+
+La forma de logear es mediante la URL http://localhost:<port>/login/?username=<username>&password=<password>
+
+Una vez iniciada la sesion, el usuario contara con determinados privilegios segun su rol. Dentro del sistema a la hora de iniciada la sesion se disponen de tres variables de entorno para la gestion de datos:
+- USER_AUTHENTICATED: Registra el estado de inicio de sesion
+- USER_USERNAME: Registra el numero de usuario en cuestion
+- USER_ROLE: Registra el role del usuario en cuestion
+
+Para deslogearse del sitio, simplemente se debe acceder a la URL http://localhost:<port>/lofoff/ borrando asi la informacion registrada en las variables de entorno.
+
+# Informacion de estudiantes
+Para visualizar la informacion de un estudiante es necesario estar logeado como se menciono anteriormente y ademas la informacion estara disponible con restricciones:
+- Un estudiante solo puede ver sus datos
+- Un profesor o un tutor pueden ver la informacion de todos los estudiantes
+
+# Registro de asistencia
+El registro de asistencia solo puede ser realizar por profesores o tutores registrados y logeados en el sistema.
