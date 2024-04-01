@@ -1,4 +1,5 @@
 import sqlite3
+from src.utils import *
 
 # Variables globables
 # Se supone que esto se ejecuta desde el main.py
@@ -10,24 +11,46 @@ def db_open():
     conn.row_factory = sqlite3.Row
     return conn
 
+# Borrar datos anteriores
+def clean_database():
+    try:
+        conn = db_open()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM students")
+        cursor.execute("DELETE FROM teachers")
+        cursor.execute("DELETE FROM tutors")
+        cursor.execute("DELETE FROM asistance")
+        conn.commit()
+        conn.close()
+    except:
+        pass
+
 # Función para crear la tabla de estudiantes si no existe
 def fetch_students_table():
-    conn = db_open()
-    cursor = conn.cursor()
-    cursor.execute(
-        """
-        CREATE TABLE IF NOT EXISTS students (
-            username INTEGER PRIMARY KEY,
-            password TEXT,
-            first_name TEXT,
-            last_name TEXT,
-            nationality TEXT,
-            email TEXT
-            )
-        """
-    )
-    conn.commit()
-    conn.close()
+    try:
+        conn = db_open()
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS students (
+                username INTEGER PRIMARY KEY,
+                password TEXT,
+                first_name TEXT,
+                last_name TEXT,
+                nationality TEXT,
+                email TEXT,
+                active BOOLEAN,
+                updated_by TEXT,
+                updated_at DATE,
+                created_at DATE
+                )
+            """
+        )
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        return False
 
 # Función para crear la tabla de maestros si no existe
 def fetch_teachers_table():
@@ -41,14 +64,17 @@ def fetch_teachers_table():
             first_name TEXT, 
             last_name TEXT,
             nationality TEXT,
-            email TEXT
+            email TEXT,
+            updated_by TEXT,
+            updated_at DATE,
+            created_at DATE
             )
         """
     )
     conn.commit()
     conn.close()
 
-# Función para crear la tabla de preceptores si no existe
+# Función para crear la tabla de maestros si no existe
 def fetch_tutors_table():
     conn = db_open()
     cursor = conn.cursor()
@@ -57,10 +83,13 @@ def fetch_tutors_table():
         CREATE TABLE IF NOT EXISTS tutors (
             username INTEGER PRIMARY KEY,
             password TEXT,
-            first_name TEXT,
+            first_name TEXT, 
             last_name TEXT,
             nationality TEXT,
-            email TEXT
+            email TEXT,
+            updated_by TEXT,
+            updated_at DATE,
+            created_at DATE
             )
         """
     )
@@ -68,12 +97,18 @@ def fetch_tutors_table():
     conn.close()
     
 def get_all_students():
-    conn = db_open()
-    cursor = conn.cursor()
-    cursor.execute("SELECT username, first_name, last_name, nationality, email FROM students")
-    students = cursor.fetchall()
-    conn.close()
-    return students
+    try:
+        conn = db_open()
+        cursor = conn.cursor()
+        cursor.execute("SELECT username, first_name, last_name, nationality, email FROM students")
+        students = cursor.fetchall()
+        conn.close()
+        if len(students) > 0:
+            return students
+        else:
+            return {'message': 'No hay alumnos para mostrar'}
+    except Exception as e:
+        return {'message': f'Se produjo un error al obtener la lista de alumnos. {e}'}
     
 # Funcion para obtener los datos de un studiante
 def get_student(username):
@@ -90,7 +125,7 @@ def get_student(username):
     return student
 
 # Agregar un estudiante
-def add_student(username, password, first_name, last_name, nationality, email):
+def add_student(username, password, first_name, last_name, nationality, email, active):
     try:
         # Abro la conexión con la base de datos
         conn = db_open()
@@ -120,10 +155,20 @@ def add_student(username, password, first_name, last_name, nationality, email):
             # Insertar el nuevo estudiante en la base de datos
             cursor.execute(
                 """
-                INSERT INTO students (username, password, first_name, last_name, nationality, email)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO students (
+                    username,
+                    password,
+                    first_name,
+                    last_name,
+                    nationality,
+                    email,
+                    active,
+                    updated_by,
+                    updated_at,
+                    created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (username, password, first_name, last_name, nationality, email)
+                (username, password, first_name, last_name, nationality, email, active, get_user_name(), get_db_format_time(), get_db_format_time())
             )
             # Guardar los cambios y cerrar la conexión
             conn.commit()
@@ -188,15 +233,26 @@ def update_student(username, password, first_name, last_name, nationality, email
 
 # Función para crear la tabla de asistencias
 def fetch_asistance_table():
-    conn = db_open()
-    cursor = conn.cursor()
-    cursor.execute(
-        """
-        CREATE TABLE IF NOT EXISTS asistance (date INTEGER, username INTEGER, present BOOL, justification TEXT)
-        """
-    )
-    conn.commit()
-    conn.close()
+    try:
+        conn = db_open()
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS asistance (
+                date INTEGER,
+                username INTEGER,
+                present BOOL,
+                justification TEXT,
+                updated_by TEXT,
+                updated_at DATE
+                )
+            """
+        )
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        return False
     
 def register_student_asistance(date, username, present, justification):
     # Abro la conexión con la base de datos
@@ -205,10 +261,10 @@ def register_student_asistance(date, username, present, justification):
     try:
         cursor.execute(
             """
-            INSERT OR REPLACE INTO asistance (date, username, present, justification)
-            VALUES (?, ?, ?, ?)
+            INSERT OR REPLACE INTO asistance (date, username, present, justification, updated_by, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
-            (date, username, present, justification)
+            (date, username, present, justification, get_user_name(), get_db_format_time())
         )
         # Guardo los cambios y cierro la conexión
         conn.commit()
@@ -251,19 +307,66 @@ def set_abset_justification(username, date, justification):
         conn.close()
         return True
 
-# Agregar un estudiante
+# Agregar un profesor
 def add_teacher(username, password, first_name, last_name, nationality, email):
-    # Abro la conexion con la vase de datos
-    conn = db_open()
-    cursor = conn.cursor()
-    cursor.execute(
-        "INSERT INTO teachers (username, password, first_name, last_name, nationality, email) VALUES (?, ?, ?, ?, ?, ?)",
-        (username, password, first_name, last_name, nationality, email)
-    )
-    # Guardo los cambios y cierro la conexion
-    conn.commit()
-    conn.close()
-    
+    try:
+        # Abro la conexion con la vase de datos
+        conn = db_open()
+        cursor = conn.cursor()
+        cursor.execute(
+                """
+                INSERT INTO teachers (
+                    username,
+                    password,
+                    first_name,
+                    last_name,
+                    nationality,
+                    email,
+                    updated_by,
+                    updated_at,
+                    created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (username, password, first_name, last_name, nationality, email, get_user_name(), get_db_format_time(), get_db_format_time())
+                
+        )
+        # Guardo los cambios y cierro la conexion
+        conn.commit()
+        conn.close()
+        return {'message': 'El profesor se ha creado correctamente.'}
+    except Exception as e:
+        return {'message': f'Se ha producido un error al crear el profesor. {e}'}
+
+# Agregar un preceptor
+def add_tutor(username, password, first_name, last_name, nationality, email):
+    try:
+        # Abro la conexion con la vase de datos
+        conn = db_open()
+        cursor = conn.cursor()
+        cursor.execute(
+                """
+                INSERT INTO tutors (
+                    username,
+                    password,
+                    first_name,
+                    last_name,
+                    nationality,
+                    email,
+                    updated_by,
+                    updated_at,
+                    created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (username, password, first_name, last_name, nationality, email, get_user_name(), get_db_format_time(), get_db_format_time())
+                
+        )
+        # Guardo los cambios y cierro la conexion
+        conn.commit()
+        conn.close()
+        return {'message': 'El preceptor se ha creado correctamente.'}
+    except Exception as e:
+        return {'message': f'Se ha producido un error al crear el preceptor. {e}'}
+
 def is_valid_student(username, password):
     # Abro la conexión con la base de datos
     conn = db_open()
@@ -304,6 +407,26 @@ def is_valid_teacher(username, password):
         # Cierro la conexión con la base de datos
         conn.close()
         
+def is_valid_tutor(username, password):
+    # Abro la conexión con la base de datos
+    conn = db_open()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT username FROM tutors WHERE username = ? AND password = ?", (username, password)
+        )
+        # Compruebo si hay alguna fila coincidente
+        if cursor.fetchone():
+            return True
+        else:
+            return False
+    except Exception as e:
+        print("Error al ejecutar la consulta:", e)
+        return False
+    finally:
+        # Cierro la conexión con la base de datos
+        conn.close()
+
 def is_valid_date(date):
     # Abro la conexión con la base de datos
     conn = db_open()

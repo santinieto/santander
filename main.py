@@ -3,7 +3,6 @@ from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel
 import sqlite3
 import random
-import os
 from datetime import datetime
 import src.db as db
 from src.open_meteo import *
@@ -15,35 +14,6 @@ app = FastAPI()
 
 # Para ejecutar el servidor
 # uvicorn main:app --reload
-
-# Variables globables
-os.environ["USER_AUTHENTICATED"] = 'False'
-os.environ["USER_USERNAME"] = ''
-os.environ["USER_ROLE"] = ''
-os.environ["USER_LOG_TIME"] = ''
-
-############################################################################
-# Funciones de control
-############################################################################
-def is_authenticated():
-    if os.environ["USER_AUTHENTICATED"] == 'True':
-        return True
-    return False
-
-def set_user_authenticated(username, role):
-    os.environ["USER_AUTHENTICATED"] = 'True'
-    os.environ["USER_USERNAME"] = username
-    os.environ["USER_ROLE"] = role
-    os.environ["USER_LOG_TIME"] = datetime.now().strftime("%Y%m%dT%H:%M:%S")
-    
-def get_user_role():
-    return os.environ["USER_ROLE"]
-
-def get_user_name():
-    return os.environ["USER_USERNAME"]
-
-def get_log_time():
-    return os.environ["USER_LOG_TIME"]
 
 ############################################################################
 # Ruta de sanidad
@@ -149,7 +119,7 @@ def create_student(student: Student):
     email = student.email
     
     # Verificar si el usuario actual es profesor o administrador
-    if get_user_role() not in ['teacher', 'admin']:
+    if get_user_role() not in ['tutor', 'admin']:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Solo los profesores o administradores pueden agregar estudiantes.")
 
     try:
@@ -185,6 +155,8 @@ def update_student(username: str, password: str = None, first_name: str = None, 
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Debe iniciar sesion para modificar los datos.")
         if get_user_role() in ['teacher']:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Los profesores no tienen acceso para modificar los datos de alumnos.")
+        if get_user_role() == 'student' and get_user_name() != username:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado.")
         
         # Obtener los datos actuales del alumno
         student = db.get_student(username)
@@ -221,7 +193,7 @@ def get_student_data(username: str):
     # Verifico si el usuario puede ver la informacion
     if is_authenticated() is False:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Debe iniciar sesion para acceder a los datos.")
-    if get_user_role() != 'admin' and get_user_role() == 'student' and get_user_name() != username:
+    if get_user_role() == 'student' and get_user_name() != username:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado.")
 
     try:
@@ -258,6 +230,8 @@ def view_students():
     # Verificar si el usuario está autenticado
     if not is_authenticated():
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Debe iniciar sesión para acceder a los datos.")
+    if get_user_role() not in ['teacher']:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado.")
     
     students = db.get_all_students()
     
@@ -358,6 +332,10 @@ def fetch_date_in_db(target_date=None):
         db.register_student_asistance(target_date, student, 0, justification)
 
     return target_date
+
+@app.get("/edit_asistance/")
+def justify_absent(username: str, asistance: str, justification: str, date: str):
+    return {'mesage': 'message'}
 
 @app.get("/justify_absent/")
 def justify_absent(username: str, date: str = None, justificacion: str = 'Other-reason'):

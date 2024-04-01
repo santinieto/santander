@@ -2,12 +2,48 @@ from datetime import datetime
 from faker import Faker
 import random
 import string
+import os
 
 import sys
 sys.path.append('./src')
 
 from db import get_student_asistance
 
+# Variables globables
+os.environ["USER_AUTHENTICATED"] = 'False'
+os.environ["USER_USERNAME"] = ''
+os.environ["USER_ROLE"] = ''
+os.environ["USER_LOG_TIME"] = ''
+
+############################################################################
+# Funciones de control
+############################################################################
+def is_authenticated():
+    if os.environ["USER_AUTHENTICATED"] == 'True':
+        return True
+    return False
+
+def set_user_authenticated(username, role):
+    os.environ["USER_AUTHENTICATED"] = 'True'
+    os.environ["USER_USERNAME"] = username
+    os.environ["USER_ROLE"] = role
+    os.environ["USER_LOG_TIME"] = datetime.now().strftime("%Y%m%dT%H:%M:%S")
+    
+def get_user_role():
+    return os.environ["USER_ROLE"]
+
+def get_user_name():
+    return os.environ["USER_USERNAME"]
+
+def get_log_time():
+    return os.environ["USER_LOG_TIME"]
+
+def get_db_format_time():
+    return datetime.now().strftime("%Y%m%dT%H:%M:%S")
+
+############################################################################
+# Funciones auxiliares
+############################################################################
 def get_formatted_date():
     """
     Obtiene la fecha actual en formato YYYYMMDD.
@@ -83,12 +119,12 @@ def new_user(verbose=False):
 
     # Mostrar los datos del estudiante
     if verbose:
-        print("Nombre:", user_first_name)
-        print("Apellido:", user_last_name)
-        print("Email:", user_email)
-        print('Nacionalidad:', user_nationalilty)
-        print("DNI:", user_dni)
-        print("Contraseña:", user_password)
+        print("\t - Nombre:       ", user_first_name)
+        print("\t - Apellido:     ", user_last_name)
+        print("\t - Email:        ", user_email)
+        print("\t - Nacionalidad: ", user_nationalilty)
+        print("\t - DNI:          ", user_dni)
+        print("\t - Contraseña:   ", user_password)
     
     # Datos del estudiante
     user_data = {
