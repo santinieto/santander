@@ -28,11 +28,48 @@ def my_profile():
     if is_authenticated() is False:
         return {"message": "Debe iniciar sesion para acceder a los datos."}
     
-    return {
-        'username': get_user_name(),
-        'role': get_user_role(),
-        'log_time': get_log_time(),
-    }
+    if get_user_role() == "admin":
+        dicc = {}
+        dicc['username'] = get_user_name()
+        dicc['role'] = get_user_role()
+        dicc['log_time'] = get_log_time()
+        return dicc
+    
+    if get_user_role() == "student":
+        data = db.get_student(get_user_name())
+        dicc = {}
+        dicc['username'] = get_user_name()
+        dicc['role'] = get_user_role()
+        dicc['log_time'] = get_log_time()
+        dicc['first_name'] = data['first_name']
+        dicc['last_name'] = data['last_name']
+        dicc['email'] = data['email']
+        dicc['nationality'] = data['nationality']
+        dicc['active'] = data['active']
+    
+    if get_user_role() == "teacher":
+        data = db.get_teacher(get_user_name())
+        dicc = {}
+        dicc['username'] = get_user_name()
+        dicc['role'] = get_user_role()
+        dicc['log_time'] = get_log_time()
+        dicc['first_name'] = data['first_name']
+        dicc['last_name'] = data['last_name']
+        dicc['email'] = data['email']
+        dicc['nationality'] = data['nationality']
+    
+    if get_user_role() == "tutor":
+        data = db.get_tutor(get_user_name())
+        dicc = {}
+        dicc['username'] = get_user_name()
+        dicc['role'] = get_user_role()
+        dicc['log_time'] = get_log_time()
+        dicc['first_name'] = data['first_name']
+        dicc['last_name'] = data['last_name']
+        dicc['email'] = data['email']
+        dicc['nationality'] = data['nationality']
+
+    return dicc
 
 ############################################################################
 # Rutas de logeo
@@ -73,6 +110,11 @@ def login(username: str, password: str):
         set_user_authenticated(username, 'teacher')
         return {'message': f'Bienvenido profesor {username}'}
     
+    # Verificar las credenciales del preceptor
+    if db.is_valid_tutor(username, password):
+        set_user_authenticated(username, 'tutor')
+        return {'message': f'Bienvenido preceptor {username}'}
+    
     # Si las credenciales no son válidas
     return {'message': 'Usuario o contraseña incorrectos'}
 
@@ -89,7 +131,7 @@ def logoff():
         http://localhost:8000/logoff/
     """
     if is_authenticated():
-        os.environ["USER_AUTHENTICATED"] = ''
+        os.environ["USER_AUTHENTICATED"] = 'False'
         os.environ["USER_USERNAME"] = ''
         os.environ["USER_ROLE"] = ''
         return {'message': 'Se ha cerrado la sesión'}
@@ -230,7 +272,7 @@ def view_students():
     # Verificar si el usuario está autenticado
     if not is_authenticated():
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Debe iniciar sesión para acceder a los datos.")
-    if get_user_role() not in ['teacher']:
+    if get_user_role() == 'student':
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado.")
     
     students = db.get_all_students()
@@ -248,13 +290,15 @@ def view_students():
     return students_list
 
 @app.get("/register_asistance/")
-def register_asistance(username: str, date: str = None):
+def register_asistance(username: str, date: str = None, present: str = '1', justification: str = '-'):
     """
     Registra la asistencia de un estudiante en una fecha especificada.
 
     Args:
         username (str): Nombre de usuario del estudiante.
         date (str, optional): Fecha en formato YYYYMMDD. Si no se proporciona, se usa la fecha actual.
+        present (str, optional): Presente o ausente, por defecto presente.
+        justification (str, optional): Justificacion de ausencia si fuera requerido.
 
     Returns:
         dict: Respuesta con la fecha y el nombre de usuario del estudiante registrado.
@@ -277,9 +321,9 @@ def register_asistance(username: str, date: str = None):
     date = fetch_date_in_db(date)
     
     # Registrar la asistencia del estudiante como presente
-    db.register_student_asistance(date, username, 1, '-')
+    db.register_student_asistance(date, username, present, justification)
     
-    return {"date": date, "username": username}
+    return {"message": f"Se ha cargado la asistencia del alumno {username}",}
 
 def fetch_date_in_db(target_date=None):
     """
@@ -302,6 +346,8 @@ def fetch_date_in_db(target_date=None):
 
     # Verificar si la fecha ya está en la base de datos
     is_date_loaded = db.is_valid_date(target_date)
+    
+    print(is_date_loaded)
     
     # Si la fecha ya está en la base de datos, no se hace nada más
     if is_date_loaded:
@@ -338,23 +384,23 @@ def justify_absent(username: str, asistance: str, justification: str, date: str)
     return {'mesage': 'message'}
 
 @app.get("/justify_absent/")
-def justify_absent(username: str, date: str = None, justificacion: str = 'Other-reason'):
+def justify_absent(username: str, date: str = None, justification: str = 'Other-reason'):
     """
     Actualiza la justificación de una ausencia para un estudiante en una fecha específica.
 
     Args:
         username (str): Nombre de usuario del estudiante.
         date (str, opcional): Fecha en formato YYYYMMDD.
-        justificacion (str, opcional): Código o descripción de la justificación.
+        justification (str, opcional): Código o descripción de la justificación.
 
     Returns:
         dict: Mensaje de éxito o error.
         
     Usos:
-        http://localhost:8000/justify_absent?username=<username>&date=<date>&justificacion=1
-        http://localhost:8000/justify_absent?username=<username>&date=<date>&justificacion=2
-        http://localhost:8000/justify_absent?username=<username>&date=<date>&justificacion=3
-        http://localhost:8000/justify_absent?username=<username>&date=<date>&justificacion=Other-reason
+        http://localhost:8000/justify_absent?username=<username>&date=<date>&justification=1
+        http://localhost:8000/justify_absent?username=<username>&date=<date>&justification=2
+        http://localhost:8000/justify_absent?username=<username>&date=<date>&justification=3
+        http://localhost:8000/justify_absent?username=<username>&date=<date>&justification=Other-reason
     """
     
     # Verificar si el usuario está autenticado
@@ -377,13 +423,13 @@ def justify_absent(username: str, date: str = None, justificacion: str = 'Other-
             date = get_formatted_date()
         
         # Obtener la justificación correspondiente
-        just_txt = justification_map.get(justificacion, justificacion.replace('-', ' '))
+        just_txt = justification_map.get(justification, justification.replace('-', ' '))
         
         # Actualizar la justificación en la base de datos
         result = db.set_abset_justification(username, date, just_txt)
         
         if result:
-            return {"message": "Actualización exitosa"}
+            return {"message": f"Actualización exitosa. Se justifico la asistencia del dia {date} para el alumno {username} con motivo {just_txt}"}
         else:
             return {"message": "Se produjo un error al actualizar los datos"}
     except Exception as e:

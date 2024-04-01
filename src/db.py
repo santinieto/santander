@@ -124,6 +124,34 @@ def get_student(username):
         student = None
     conn.close()
     return student
+    
+# Funcion para obtener los datos de un profesor
+def get_teacher(username):
+    conn = db_open()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT * FROM teachers WHERE username = {}".format(username)
+        )
+        teacher = cursor.fetchall()[0]
+    except:
+        teacher = None
+    conn.close()
+    return teacher
+    
+# Funcion para obtener los datos de un preceptor
+def get_tutor(username):
+    conn = db_open()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT * FROM tutors WHERE username = {}".format(username)
+        )
+        tutor = cursor.fetchall()[0]
+    except:
+        tutor = None
+    conn.close()
+    return tutor
 
 # Agregar un estudiante
 def add_student(username, password, first_name, last_name, nationality, email, active):
@@ -260,20 +288,40 @@ def register_student_asistance(date, username, present, justification):
     conn = db_open()
     cursor = conn.cursor()
     try:
+        # Verificar si ya existe un registro para la fecha y el usuario
         cursor.execute(
             """
-            INSERT OR REPLACE INTO asistance (date, username, present, justification, updated_by, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?)
+            SELECT * FROM asistance WHERE date = ? AND username = ?
             """,
-            (date, username, present, justification, get_user_name(), get_db_format_time())
+            (date, username)
         )
+        existing_record = cursor.fetchone()
+
+        if existing_record:
+            # Si ya existe un registro, actualizarlo
+            cursor.execute(
+                """
+                UPDATE asistance
+                SET present = ?, justification = ?, updated_by = ?, updated_at = ?
+                WHERE date = ? AND username = ?
+                """,
+                (present, justification, get_user_name(), get_db_format_time(), date, username)
+            )
+        else:
+            # Si no existe un registro, insertarlo
+            cursor.execute(
+                """
+                INSERT INTO asistance (date, username, present, justification, updated_by, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (date, username, present, justification, get_user_name(), get_db_format_time())
+            )
         # Guardo los cambios y cierro la conexión
         conn.commit()
     except Exception as e:
-        print("Error al agregar el registro de asistencia:", e)
+        print("Error al agregar o actualizar el registro de asistencia:", e)
     finally:
         conn.close()
-
 # Obtengo la lista de inasistencias de un estudiante
 def get_student_asistance(username):
     # Abro la conexión con la base de datos
@@ -297,7 +345,15 @@ def set_abset_justification(username, date, justification):
     cursor = conn.cursor()
     try:
         cursor.execute(
-            "UPDATE asistance SET justification = ? WHERE username = ? and date = ?", (justification, username, date)
+            """
+            UPDATE asistance 
+            SET justification = ?,
+                updated_at = ?,
+                updated_by = ?
+            WHERE username = ?
+                and date = ?
+            """,
+            (justification, get_db_format_time(), get_user_name(), username, date)
         )
     except Exception as e:
         print("Error al ejecutar la consulta:", e)
@@ -434,7 +490,7 @@ def is_valid_date(date):
     cursor = conn.cursor()
     try:
         cursor.execute(
-            "SELECT * FROM asistance WHERE date = ?", (date)
+            "SELECT * FROM asistance WHERE date = ?", (date,)
         )
         # Compruebo si hay alguna fila coincidente
         if cursor.fetchall():
