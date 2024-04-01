@@ -154,7 +154,10 @@ def calc_student_asistance(student):
     absent_dates = [transform_to_date(row['date']) for row in data if row['present'] == 0]
     n_absent = len(absent_dates)
     n_prensent = len(data) - n_absent
-    present_rate = round(n_prensent / len(data) * 100.0, 2)
+    try:
+        present_rate = round(n_prensent / len(data) * 100.0, 2)
+    except:
+        present_rate = 0
     return n_prensent, n_absent, present_rate, absent_dates
 
 if __name__ == "__main__":

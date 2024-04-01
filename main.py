@@ -37,6 +37,11 @@ def my_profile():
     
     if get_user_role() == "student":
         data = db.get_student(get_user_name())
+        
+        # Si el alumno se encuentra inahiliatdo no puede ver sus datos
+        if str(data['active']) == '0':
+            return {"message": "Alumno inhabilitado. No se pueden mostrar los datos. Contacte a su profesor."}
+        
         dicc = {}
         dicc['username'] = get_user_name()
         dicc['role'] = get_user_role()
@@ -204,6 +209,9 @@ def update_student(username: str, password: str = None, first_name: str = None, 
         # Obtener los datos actuales del alumno
         student = db.get_student(username)
         
+        if str(student['active']) == '0' and get_user_name() == username:
+            return {"message": "Alumno inhabilitado. No se pueden modificar los datos. Contacte a su profesor."}
+        
         # Obtener los datos del estudiante del modelo Pydantic
         password = password if password is not None else student['password']
         first_name = first_name if first_name is not None else student['first_name']
@@ -216,6 +224,21 @@ def update_student(username: str, password: str = None, first_name: str = None, 
 
     except Exception as e:
         return {"message": f"Error al actualizar los datos: {e}"}
+
+@app.get("/set_student_status/")
+def set_student_status(username: str, status: str):
+    """
+    """
+    
+    # Verifico si el usuario puede ver la informacion
+    if is_authenticated() is False:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Debe iniciar sesion para acceder a los datos.")
+    if get_user_role() in ['student', 'teacher']:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado.")
+    
+    message = db.set_student_status(username, status)
+    
+    return {'message': message}
 
 @app.get("/get_student/")
 def get_student_data(username: str):

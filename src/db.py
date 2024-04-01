@@ -101,7 +101,7 @@ def get_all_students():
     try:
         conn = db_open()
         cursor = conn.cursor()
-        cursor.execute("SELECT username, first_name, last_name, nationality, email FROM students")
+        cursor.execute("SELECT username, first_name, last_name, nationality, email FROM students where active = 1")
         students = cursor.fetchall()
         conn.close()
         if len(students) > 0:
@@ -538,3 +538,25 @@ def export_table_to_csv(table_name, csv_file):
 
     # Cerrar la conexión con la base de datos
     conn.close()
+    
+def set_student_status(username, status):
+    try:
+        # Abro la conexión con la base de datos
+        conn = db_open()
+        cursor = conn.cursor()
+        # Obtener todos los registros de la tabla
+        cursor.execute(
+            """UPDATE STUDENTS SET active = ?,
+                updated_by = ?,
+                updated_at = ?
+                WHERE username = ?
+            """,
+            (status, get_user_name(), get_db_format_time(), username)
+            )
+        conn.commit()
+        message = f"El estado de activo para el estudiante {username} a sido cambiado a {status} satisfactoriamente."
+    except Exception as e:
+        message = f"Error al actualizar el estado para el alumno {username}. {e}"
+    finally:
+        conn.close()
+        return message
