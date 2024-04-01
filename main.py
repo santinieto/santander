@@ -1,10 +1,10 @@
 # Librerias necesarias
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel
 import sqlite3
 import random
 import os
-from src.db import *
+import src.db as db
 from src.open_meteo import *
 from src.utils import *
 from src.models import *
@@ -21,6 +21,24 @@ os.environ["USER_USERNAME"] = ''
 os.environ["USER_ROLE"] = ''
 
 ############################################################################
+# Funciones de control
+############################################################################
+def is_authenticated():
+    if os.environ["USER_AUTHENTICATED"] == 'True':
+        return True
+    return False
+
+def set_user_authenticated(username, role):
+    os.environ["USER_AUTHENTICATED"] = 'True'
+    os.environ["USER_USERNAME"] = username
+    os.environ["USER_ROLE"] = role
+    
+def get_user_role():
+    return os.environ["USER_ROLE"]
+def get_user_name():
+    return os.environ["USER_USERNAME"]
+
+############################################################################
 # Ruta de sanidad
 ############################################################################
 @app.get("/")
@@ -28,49 +46,81 @@ def read_root():
     return {"Hello": "World"}
 
 ############################################################################
-# Ruta de logeo
+# Rutas de logeo
 ############################################################################
-# http://localhost:8000/login?username=1234&password=1234
-# http://localhost:8000/login?username=38846700&password=ARLhIkRd
-# http://localhost:8000/login?username=15947788&password=HKwN5U1N
 @app.get("/login/")
 def login(username: str, password: str):
-    
-    # Si ya hay una sesion iniciada primero hay que cerrarla:
-    if os.environ["USER_AUTHENTICATED"] == 'True':
-        return {'message', 'Ya hay una sesion iniciada. Debe cerrarla para poder ingresar a otra cuenta'}
-    
-    # Verifico si es un estudiante
-    if is_valid_student(username, password) is True:
-        os.environ["USER_AUTHENTICATED"] = 'True'
-        os.environ["USER_USERNAME"] = username
-        os.environ["USER_ROLE"] = 'student'
-        return{'message': f'Bienvenido estudiante {os.environ["USER_USERNAME"]}'}
+    """
+    Inicia sesión de un usuario con las credenciales proporcionadas.
+
+    Args:
+        username (str): Nombre de usuario.
+        password (str): Contraseña del usuario.
+
+    Returns:
+        dict: Un mensaje de bienvenida si las credenciales son válidas,
+        o un mensaje de error si las credenciales son incorrectas o ya hay una sesión iniciada.
         
-    if is_valid_teacher(username, password) is True:
-        os.environ["USER_AUTHENTICATED"] = 'True'
-        os.environ["USER_USERNAME"] = username
-        os.environ["USER_ROLE"] = 'teacher'
-        return{'message': f'Bienvenido profesor {os.environ["USER_USERNAME"]}'}
-        
-    return{'message': 'Usuario o contraseña incorrectos'}
+    Uso:
+        http://localhost:8000/login?username=<username>&password=<password>
+    """
+    
+    # Verificar si ya hay una sesión iniciada
+    if is_authenticated():
+        return {'message': 'Ya hay una sesión iniciada. Debe cerrarla para poder iniciar sesión en otra cuenta'}
+    
+    # Checko de inicio de sesion como administrador
+    if username == 'admin' and password == 'admin':
+        set_user_authenticated(username, 'admin')
+        return {'message': f'Se ha iniciado sesion como administrador'}
+    
+    # Verificar las credenciales del estudiante
+    if db.is_valid_student(username, password):
+        set_user_authenticated(username, 'student')
+        return {'message': f'Bienvenido estudiante {username}'}
+    
+    # Verificar las credenciales del profesor
+    if db.is_valid_teacher(username, password):
+        set_user_authenticated(username, 'teacher')
+        return {'message': f'Bienvenido profesor {username}'}
+    
+    # Si las credenciales no son válidas
+    return {'message': 'Usuario o contraseña incorrectos'}
 
 @app.get("/logoff/")
-def login():
-    if os.environ["USER_AUTHENTICATED"] == 'False':
-        return {'message': 'No se ha iniciado sesion'}
-    else:
-        os.environ["USER_AUTHENTICATED"] = 'False'
+def logoff():
+    """
+    Cierra la sesión del usuario actual.
+
+    Returns:
+        dict: Un mensaje indicando que la sesión se ha cerrado correctamente,
+        o un mensaje de error si no hay una sesión iniciada.
+        
+    Uso:
+        http://localhost:8000/logoff/
+    """
+    if is_authenticated():
+        os.environ["USER_AUTHENTICATED"] = ''
         os.environ["USER_USERNAME"] = ''
         os.environ["USER_ROLE"] = ''
-        return {'message': 'Se ha cerrado la sesion'}
+        return {'message': 'Se ha cerrado la sesión'}
+    return {'message': 'No se ha iniciado sesión'}
 
 ############################################################################
 # Gestion de estudiantes
 ############################################################################
-# Agrego un estudiante
 @app.post("/add_student/")
 def create_student(student: Student):
+    """
+    Agrega un estudiante a la base de datos.
+
+    Args:
+        student (Student): Datos del estudiante a agregar.
+
+    Returns:
+        dict: Datos del estudiante agregado.
+    """
+        
     # Obtener los datos del estudiante del modelo Pydantic
     username = student.username
     password = student.password
@@ -79,147 +129,226 @@ def create_student(student: Student):
     nationality = student.nationality
     email = student.email
     
-    # Verificar que existe la tabla de estudiantes
-    fetch_students_table()
-    
-    # Agregar el alumno
-    add_student(username, password, first_name, last_name, nationality, email)
-    
-    # Devuelvo el JSON
-    return {"username": username, "password": password, "first_name": first_name, "last_name": last_name, "nationality": nationality, "email": email}
+    # Verificar si el usuario actual es profesor o administrador
+    if get_user_role() not in ['teacher', 'admin']:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Solo los profesores o administradores pueden agregar estudiantes.")
 
-# Ver los datos de un estudiante
-# http://localhost:8000/get_student?username=38846700
+    try:
+        # Verificar que existe la tabla de estudiantes
+        db.fetch_students_table()
+        
+        # Agregar el alumno
+        response = db.add_student(username, password, first_name, last_name, nationality, email)
+        
+        # Devuelvo el JSON
+        return response
+    
+    except Exception as e:
+        return {'message': f'Se produjo un error al crear el estudiante. Error: {e}'}
+
 @app.get("/get_student/")
 def get_student_data(username: str):
+    """
+    Obtiene los datos de un estudiante específico de la base de datos.
+
+    Args:
+        username (str): Nombre de usuario del estudiante.
+
+    Returns:
+        dict: Datos del estudiante si se encuentra en la base de datos.
+        Mensaje de error si el estudiante no se encuentra o si el acceso está denegado.
+        
+    Uso:
+        http://localhost:8000/get_student?username=<username>
+    """
     
     # Verifico si el usuario puede ver la informacion
-    valid = False
-    if os.environ["USER_AUTHENTICATED"] is False:
+    if is_authenticated() is False:
         return {"message": "Debe iniciar sesion para acceder a los datos"}
-    if os.environ["USER_ROLE"] in ['teacher', 'tutor']:
-        valid = True
-    if os.environ["USER_ROLE"] == 'student' and os.environ["USER_USERNAME"] == username:
-        valid = True
+    if get_user_role() != 'admin' and get_user_role() == 'student' and get_user_name() != username:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
+
+    try:
+        # Obtener los datos del estudiante de la base de datos
+        student = db.get_student(username)
+        if student is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Estudiante no encontrado")
         
-    if valid is False:
-        return {"message": "Acceso denegado"}
+        # Obtener la asistencia del estudiante
+        n_present, n_absent, present_rate, absent_dates = calc_student_asistance(username)
 
-    # Verifico que el usuario existe en la base de datos
-    student = get_student(username)
-    
-    n_prensent, n_absent, present_rate, absent_dates = calc_student_asistance(username)
-    
-    # Verifico que la contraseña sea correcta
-    if student is None:
-        return {"message": "Estudiante no encontrado"}
-    
-    else:
+        # Presentar los datos del estudiante en el formato deseado
         return {
-            "Usuario": student['username'],
-            "Nombre": f"{student['first_name']} {student['last_name']}",
-            "Nacionalidad": student['nationality'],
-            "Correo electronico:": student['email'],
-            "Cantidad de dias presentes": n_prensent,
-            "Cantidad de asusencias": n_absent,
-            "Porcentaje de asistencias": present_rate,
-            "Fechas de ausencias": absent_dates,
-            }
+            "username": student['username'],
+            "name": f"{student['first_name']} {student['last_name']}",
+            "nationality": student['nationality'],
+            "email": student['email'],
+            "n_present" : n_present,
+            "n_absent" : n_absent,
+            "present_rate" : present_rate,
+            "absent_dates" : absent_dates,
+        }
+    except Exception as e:
+        return {"message": f"Error al obtener los datos del estudiante: {e}"}
 
-# Veo la lista de estudiantes
 @app.get("/view_students/")
 def view_students():
+    """
+    Obtiene la lista de estudiantes y sus datos de asistencia.
+
+    Returns:
+        list: Lista de diccionarios que contienen los datos de los estudiantes y su asistencia.
+    """
+    # Verificar si el usuario está autenticado
+    if not is_authenticated():
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Debe iniciar sesión para acceder a los datos.")
     
-    # Verifico si el usuario puede ver la informacion
-    if os.environ["USER_AUTHENTICATED"] is False:
-        return {"message": "Debe iniciar sesion para acceder a los datos"}
-    
-    students = get_all_students()
+    students = db.get_all_students()
     
     students_list = []
     for student in students:
-        student = dict(student)
-        n_prensent, n_absent, present_rate, absent_dates = calc_student_asistance(student['username'])
-        student['n_prensent'] = n_prensent
-        student['n_absent'] = n_absent
-        student['present_rate'] = present_rate
-        student['absent_dates'] = absent_dates
-        students_list.append( student )
+        student_data = dict(student)
+        n_present, n_absent, present_rate, absent_dates = calc_student_asistance(student_data['username'])
+        student_data['n_present'] = n_present
+        student_data['n_absent'] = n_absent
+        student_data['present_rate'] = present_rate
+        student_data['absent_dates'] = absent_dates
+        students_list.append(student_data)
         
     return students_list
 
-# Registrar asistencia
 @app.get("/register_asistance/")
-def register_asistance():
-    
-    # Verifico si el usuario puede ver la informacion
-    if os.environ["USER_AUTHENTICATED"] is False:
-        return {"message": "Debe iniciar sesion para acceder a los datos"}
-    if os.environ["USER_ROLE"] in ['student']:
-        return {"message": "El registro de asistencia solo puede ser realizado por profesores o preceptores"}
-    
-    # Obtengo la fecha
-    date = get_formatted_date()
-    # Obtengo la informacion del clima
-    temp = Temperature()
-    temp.fetch_data()
-    rain = temp.last_rain
-    
-    # Voy a suponer que los estudiantes de alguna forma
-    # registraron su asistencia
-    students_list = [row["username"] for row in get_all_students()]
-    # Probabilidad de True (70%) y False (30%)
-    probabilidades = [True, False]
-    probabilidades_pesos = [0.7, 0.3]
-    # Asignar True o False a cada nombre con las probabilidades dadas
-    resultados = random.choices(probabilidades, weights=probabilidades_pesos, k=len(students_list))
-    # Crear un diccionario con los nombres y sus valores asignados
-    resultados_dict = dict(zip(students_list, resultados))
-    
-    # Verifico que existe la tabla de asistencia
-    fetch_asistance_table()
+def register_asistance(username: str, date: str = None):
+    """
+    Registra la asistencia de un estudiante en una fecha especificada.
 
-    # Lista de alumnos presentes
-    present_students = [nombre for nombre, valor in resultados_dict.items() if valor]
-    # Registro la lista de presentes
-    for username in present_students:
-        register_student_asistance(date, username, 1, '-')
-    
-    # Lista de alumnos ausentes
-    absent_students = [nombre for nombre, valor in resultados_dict.items() if not valor]
-    justificacion = '-'
-    if rain:
-        justificacion = 'Dia lluvioso'
-    # Registro la lista de ausentes
-    for username in present_students:
-        register_student_asistance(date, username, 0, justificacion)
-    
-    # Devuelvo los datos
-    return {"date": date, "rain": rain, "present_students": present_students, "absent_students": absent_students}
+    Args:
+        username (str): Nombre de usuario del estudiante.
+        date (str, optional): Fecha en formato YYYYMMDD. Si no se proporciona, se usa la fecha actual.
 
-# Ver los datos de un estudiante
-# http://localhost:8000/justify_absent?username=29186424&date=20240331&justificacion=1
-# http://localhost:8000/justify_absent?username=29186424&date=20240331&justificacion=2
-# http://localhost:8000/justify_absent?username=29186424&date=20240331&justificacion=3
-# http://localhost:8000/justify_absent?username=29186424&date=20240331&justificacion=Other-reason
-@app.get("/justify_absent/")
-def justify_absent(username: str, date: str, justificacion: str):
+    Returns:
+        dict: Respuesta con la fecha y el nombre de usuario del estudiante registrado.
+    """
     
-    if justificacion == "1":
-        just_txt = 'Enfermedad'
-    elif justificacion == '2':
-        just_txt = 'Tramite personal'
-    elif justificacion == '3':
-        just_txt = 'Consulta medica'
-    else:
-        just_txt = justificacion.replace('-',' ')
+    # Verificar si el usuario está autenticado
+    if not is_authenticated():
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Debe iniciar sesión para acceder a los datos.")
+    
+    # Verificar si el usuario tiene permisos para registrar asistencia
+    if get_user_role() == 'student':
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="El registro de asistencia solo puede ser realizado por profesores o preceptores.")
+    
+    # Obtener la fecha de la base de datos
+    date = fetch_date_in_db(date)
+    
+    # Registrar la asistencia del estudiante como presente
+    db.register_student_asistance(date, username, 1, '-')
+    
+    return {"date": date, "username": username}
+
+def fetch_date_in_db(target_date=None):
+    """
+    Verifica si existe una fecha en la base de datos y la registra si no está presente.
+    Se verifica el estado del clima para autojustificar la asistencia del estudiante.
+
+    Args:
+        target_date (str, optional): Fecha en formato YYYYMMDD. Si no se proporciona, se usa la fecha actual.
+
+    Returns:
+        str: Fecha registrada en la base de datos.
+    """
+    
+    # Obtener la fecha del sistema
+    sys_date = get_formatted_date()
+    
+    # Utilizar la fecha actual si no se proporciona una fecha específica
+    if target_date is None:
+        target_date = sys_date
+
+    # Verificar si la fecha ya está en la base de datos
+    is_date_loaded = db.is_valid_date(target_date)
+    
+    # Si la fecha ya está en la base de datos, no se hace nada más
+    if is_date_loaded:
+        return target_date
         
-    result = set_abset_justification(username, date, just_txt)
-    
-    if result is True:
-        return {"message": "Actualizacion exitosa"}
+    # Obtener datos meteorológicos si la fecha es la fecha actual
+    if target_date == sys_date:
+        temp = Temperature()
+        temp.fetch_data()
+        rain = temp.last_rain
     else:
-        return {"message": "Se produjo un error al actualizar los datos"}
+        rain = False
+        
+    # Establecer justificación en caso de lluvia
+    if rain:
+        justification = 'Dia lluvioso'
+    else:
+        justification = '-'
+        
+    # Obtener la lista de estudiantes
+    students_list = [row["username"] for row in db.get_all_students()]
+    
+    # Verificar que existe la tabla de asistencia
+    db.fetch_asistance_table()
+    
+    # Registrar la lista de estudiantes como ausentes
+    for student in students_list:
+        db.register_student_asistance(target_date, student, 0, justification)
+
+    return target_date
+
+@app.get("/justify_absent/")
+def justify_absent(username: str, date: str = None, justificacion: str = 'Other-reason'):
+    """
+    Actualiza la justificación de una ausencia para un estudiante en una fecha específica.
+
+    Args:
+        username (str): Nombre de usuario del estudiante.
+        date (str, opcional): Fecha en formato YYYYMMDD.
+        justificacion (str, opcional): Código o descripción de la justificación.
+
+    Returns:
+        dict: Mensaje de éxito o error.
+        
+    Usos:
+        http://localhost:8000/justify_absent?username=<username>&date=<date>&justificacion=1
+        http://localhost:8000/justify_absent?username=<username>&date=<date>&justificacion=2
+        http://localhost:8000/justify_absent?username=<username>&date=<date>&justificacion=3
+        http://localhost:8000/justify_absent?username=<username>&date=<date>&justificacion=Other-reason
+    """
+    
+    # Verificar si el usuario está autenticado
+    if not is_authenticated():
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Debe iniciar sesión para modificar datos de asistencia.")
+    
+    # Verificar si el usuario tiene permisos para registrar asistencia
+    if get_user_role() == 'student':
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="El registro de asistencia solo puede ser modificado por profesores o preceptores.")
+    
+    try:
+        justification_map = {
+            "1": "Enfermedad",
+            "2": "Trámite personal",
+            "3": "Consulta médica"
+        }
+    
+        # Utilizar la fecha actual si no se proporciona una fecha específica
+        if date is None:
+            date = get_formatted_date()
+        
+        # Obtener la justificación correspondiente
+        just_txt = justification_map.get(justificacion, justificacion.replace('-', ' '))
+        
+        # Actualizar la justificación en la base de datos
+        result = db.set_abset_justification(username, date, just_txt)
+        
+        if result:
+            return {"message": "Actualización exitosa"}
+        else:
+            return {"message": "Se produjo un error al actualizar los datos"}
+    except Exception as e:
+        return {"message": f"Error al actualizar los datos: {e}"}
     
 ############################################################################
 # Gestion de profesores
@@ -236,10 +365,10 @@ def create_teacher(student: Student):
     email = student.email
     
     # Verificar que existe la tabla de estudiantes
-    fetch_teachers_table()
+    db.fetch_teachers_table()
     
     # Agregar el alumno
-    add_teacher(username, password, first_name, last_name, nationality, email)
+    db.add_teacher(username, password, first_name, last_name, nationality, email)
     
     # Devuelvo el JSON
     return {"username": username, "password": password, "first_name": first_name, "last_name": last_name, "nationality": nationality, "email": email}
