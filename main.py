@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import sqlite3
 import random
 import os
+from datetime import datetime
 import src.db as db
 from src.open_meteo import *
 from src.utils import *
@@ -19,6 +20,7 @@ app = FastAPI()
 os.environ["USER_AUTHENTICATED"] = 'False'
 os.environ["USER_USERNAME"] = ''
 os.environ["USER_ROLE"] = ''
+os.environ["USER_LOG_TIME"] = ''
 
 ############################################################################
 # Funciones de control
@@ -32,18 +34,35 @@ def set_user_authenticated(username, role):
     os.environ["USER_AUTHENTICATED"] = 'True'
     os.environ["USER_USERNAME"] = username
     os.environ["USER_ROLE"] = role
+    os.environ["USER_LOG_TIME"] = datetime.now().strftime("%Y%m%dT%H:%M:%S")
     
 def get_user_role():
     return os.environ["USER_ROLE"]
+
 def get_user_name():
     return os.environ["USER_USERNAME"]
+
+def get_log_time():
+    return os.environ["USER_LOG_TIME"]
 
 ############################################################################
 # Ruta de sanidad
 ############################################################################
 @app.get("/")
 def read_root():
-    return {"Hello": "World"}
+    return {"message": "Bienvenido al sistema de asistencia de la escuela rural."}
+
+@app.get("/my_profile/")
+def my_profile():
+    
+    if is_authenticated() is False:
+        return {"message": "Debe iniciar sesion para acceder a los datos."}
+    
+    return {
+        'username': get_user_name(),
+        'role': get_user_role(),
+        'log_time': get_log_time(),
+    }
 
 ############################################################################
 # Rutas de logeo
@@ -146,6 +165,43 @@ def create_student(student: Student):
     except Exception as e:
         return {'message': f'Se produjo un error al crear el estudiante. Error: {e}'}
 
+@app.get("/update_student/")
+def update_student(username: str, password: str = None, first_name: str = None, last_name: str = None, nationality: str = None, email: str = None):
+    """
+    Actualiza los datos personales de un estudiante en la base de datos.
+
+    Args:
+        username (str): Nombre de usuario del estudiante.
+        new_data (dict): Datos nuevos a actualizar.
+
+    Returns:
+        dict: Mensaje de éxito o error.
+    """
+    
+    try:
+    
+        # Verificar si el usuario actual es profesor o administrador
+        if is_authenticated() is False:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Debe iniciar sesion para modificar los datos.")
+        if get_user_role() in ['teacher']:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Los profesores no tienen acceso para modificar los datos de alumnos.")
+        
+        # Obtener los datos actuales del alumno
+        student = db.get_student(username)
+        
+        # Obtener los datos del estudiante del modelo Pydantic
+        password = password if password is not None else student['password']
+        first_name = first_name if first_name is not None else student['first_name']
+        last_name = last_name if last_name is not None else student['last_name']
+        nationality = nationality if nationality is not None else student['nationality']
+        email = email if email is not None else student['email']
+        
+        db.update_student(username, password, first_name, last_name, nationality, email)
+        return {"message": "Datos actualizados exitosamente"}
+
+    except Exception as e:
+        return {"message": f"Error al actualizar los datos: {e}"}
+
 @app.get("/get_student/")
 def get_student_data(username: str):
     """
@@ -164,9 +220,9 @@ def get_student_data(username: str):
     
     # Verifico si el usuario puede ver la informacion
     if is_authenticated() is False:
-        return {"message": "Debe iniciar sesion para acceder a los datos"}
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Debe iniciar sesion para acceder a los datos.")
     if get_user_role() != 'admin' and get_user_role() == 'student' and get_user_name() != username:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado.")
 
     try:
         # Obtener los datos del estudiante de la base de datos
@@ -228,6 +284,11 @@ def register_asistance(username: str, date: str = None):
 
     Returns:
         dict: Respuesta con la fecha y el nombre de usuario del estudiante registrado.
+
+    NOTA:
+        Para este caso estoy suponiendo que el preceptor o profesor esta obteniendo el DNI del estudiante
+        de alguna manera (QR, escanedo de DNI, dictado, etc.). Entiendo que la forma en la que se obtiene
+        este dato escapa al contexto de esta actividad.
     """
     
     # Verificar si el usuario está autenticado

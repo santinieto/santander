@@ -131,9 +131,58 @@ def add_student(username, password, first_name, last_name, nationality, email):
             return {'message': 'El estudiante se ha creado correctamente'}
     except Exception as e:
         # Manejar cualquier error que ocurra durante la ejecución
-        return {"error": f"Error al agregar estudiante: {e}"}
+        return {"error": f"Error al agregar/actualizar estudiante estudiante: {e}"}
     finally:
         # Cierro la conexion con la base de datos
+        if conn:
+            conn.close()
+
+# Función para actualizar los datos de un estudiante existente
+def update_student(username, password, first_name, last_name, nationality, email):
+    try:
+        # Abro la conexión con la base de datos
+        conn = db_open()
+        cursor = conn.cursor()
+        
+        # Verificar si el estudiante ya existe
+        cursor.execute(
+            """
+            SELECT * FROM students WHERE username = ?
+            """,
+            (username,)
+        )
+        existing_student = cursor.fetchone()
+        
+        if existing_student:
+            # Si el estudiante ya existe, actualizar sus datos
+            cursor.execute(
+                """
+                UPDATE students 
+                SET password = ?, first_name = ?, last_name = ?, nationality = ?, email = ?
+                WHERE username = ?
+                """,
+                (password, first_name, last_name, nationality, email, username)
+            )
+            # Guardar los cambios
+            conn.commit()
+            # Devolver los datos actualizados del estudiante
+            return {
+                "username": username,
+                "password": password,
+                "first_name": first_name,
+                "last_name": last_name,
+                "nationality": nationality,
+                "email": email,
+                "message": "Los datos del estudiante se han actualizado correctamente"
+            }
+        else:
+            # Si el estudiante no existe, devolver un mensaje de error
+            return {"error": "El estudiante no existe en la base de datos"}
+    except Exception as e:
+        # Manejar cualquier error que ocurra durante la ejecución
+        return {"error": f"Error al actualizar estudiante: {e}"}
+    finally:
+        # Cierro la conexión con la base de datos
         if conn:
             conn.close()
 
