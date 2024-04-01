@@ -420,3 +420,9 @@ Por ultimo, cabe recordar que en el caso de los dias lluviosos todos los alumnos
 El sistema puede cometer errores o simplemente un alumno puede olvidar de registrar su asistencia al llegar a la escuela. Por este motivo los profesores, preceptores y al administrador pueden corregir estos errores mediante la URL
 
 > http://localhost:8000/edit_asistance/
+
+# Creacion de alumnos
+
+# Creacion de profesores y preceptores
+
+# Habilitacion de alumnos

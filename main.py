@@ -159,6 +159,7 @@ def create_student(student: Student):
     last_name = student.last_name
     nationality = student.nationality
     email = student.email
+    active = student.active
     
     # Verificar si el usuario actual es profesor o administrador
     if get_user_role() not in ['tutor', 'admin']:
@@ -169,7 +170,7 @@ def create_student(student: Student):
         db.fetch_students_table()
         
         # Agregar el alumno
-        response = db.add_student(username, password, first_name, last_name, nationality, email)
+        response = db.add_student(username, password, first_name, last_name, nationality, email, active)
         
         # Devuelvo el JSON
         return response
@@ -438,22 +439,59 @@ def justify_absent(username: str, date: str = None, justification: str = 'Other-
 ############################################################################
 # Gestion de profesores
 ############################################################################
-# Agrego un estudiante
 @app.post("/add_teacher/")
-def create_teacher(student: Student):
+def create_teacher(teacher: Teacher):
     # Obtener los datos del estudiante del modelo Pydantic
-    username = student.username
-    password = student.password
-    first_name = student.first_name
-    last_name = student.last_name
-    nationality = student.nationality
-    email = student.email
+    username = teacher.username
+    password = teacher.password
+    first_name = teacher.first_name
+    last_name = teacher.last_name
+    nationality = teacher.nationality
+    email = teacher.email
+    
+    # Verificar si el usuario está autenticado
+    if not is_authenticated():
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Debe iniciar sesión para crear profesores.")
+    
+    # Verificar si el usuario tiene permisos para registrar asistencia
+    if get_user_role() != 'admin':
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Solo el administrador puede crear profesores.")
     
     # Verificar que existe la tabla de estudiantes
     db.fetch_teachers_table()
     
     # Agregar el alumno
-    db.add_teacher(username, password, first_name, last_name, nationality, email)
+    response = db.add_teacher(username, password, first_name, last_name, nationality, email)
     
     # Devuelvo el JSON
-    return {"username": username, "password": password, "first_name": first_name, "last_name": last_name, "nationality": nationality, "email": email}
+    return response
+
+############################################################################
+# Gestion de preceptores
+############################################################################
+@app.post("/add_tutor/")
+def create_teacher(tutor: Tutor):
+    # Obtener los datos del estudiante del modelo Pydantic
+    username = tutor.username
+    password = tutor.password
+    first_name = tutor.first_name
+    last_name = tutor.last_name
+    nationality = tutor.nationality
+    email = tutor.email
+    
+    # Verificar si el usuario está autenticado
+    if not is_authenticated():
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Debe iniciar sesión para crear preceptores.")
+    
+    # Verificar si el usuario tiene permisos para registrar asistencia
+    if get_user_role() != 'admin':
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Solo el administrador puede crear preceptores.")
+    
+    # Verificar que existe la tabla de estudiantes
+    db.fetch_tutors_table()
+    
+    # Agregar el alumno
+    response = db.add_tutor(username, password, first_name, last_name, nationality, email)
+    
+    # Devuelvo el JSON
+    return response

@@ -202,7 +202,16 @@ def add_student(username, password, first_name, last_name, nationality, email, a
             # Guardar los cambios y cerrar la conexión
             conn.commit()
             # Indicar que no hubo errores
-            return {'message': 'El estudiante se ha creado correctamente'}
+            return {
+                "username": username,
+                "password": password,
+                "first_name": first_name,
+                "last_name": last_name,
+                "nationality": nationality,
+                "email": email,
+                "active": active,
+                "message": "El estudiante se ha creado correctamente"
+            }
     except Exception as e:
         # Manejar cualquier error que ocurra durante la ejecución
         return {"error": f"Error al agregar/actualizar estudiante estudiante: {e}"}
