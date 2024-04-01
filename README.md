@@ -416,10 +416,30 @@ Sin embargo, la estudiante Pamela Robinson no puede justificar su asistencia por
 
 Por ultimo, cabe recordar que en el caso de los dias lluviosos todos los alumnos ausentes tendra su ausencia justificada automaticamente con el motivo "Dia lluvioso".
 
-# Correcion de asistencia (TBD)
+# Correcion de asistencia
 El sistema puede cometer errores o simplemente un alumno puede olvidar de registrar su asistencia al llegar a la escuela. Por este motivo los profesores, preceptores y al administrador pueden corregir estos errores mediante la URL
 
 > http://localhost:8000/edit_asistance/
+
+Supongamos que el profesor Jeffrey Briggs con DNI 65387263 quiere corregir la asitencia del alumno 16205080 del dia 2024/03/11 ya que erroneamete se cargo como ausente. En este caso lo primero que debe hacer es logearse:
+
+> http://localhost:8000/login/?username=65387263&password=L98PWtrP
+
+> {
+>   "message": "Bienvenido profesor 65387263"
+> }
+
+Y ahora debe corregir la asistencia:
+
+> http://localhost:8000/edit_asistance/?date=20240311&username=16205080&present=1&justification=Fixed
+
+> {
+>   "mesage": "Los datos de asistencia para el alumno 16205080 se cargaron correctamente."
+> }
+
+En la base de datos:
+
+> 20240311 | 16205080 | 1 | Fixed | 65387263 | 20240401T19:56:19
 
 # Creacion de alumnos (TBD)
 En una escuela cada año ingresan alumnos nuevos y por este motivo se les provee a los profesores y al administrador la posibilidad de agregar nuevos ingresos mediante la URL.

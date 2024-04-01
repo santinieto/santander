@@ -327,10 +327,13 @@ def register_student_asistance(date, username, present, justification):
             )
         # Guardo los cambios y cierro la conexión
         conn.commit()
+        message = f'Los datos de asistencia para el alumno {username} se cargaron correctamente.'
     except Exception as e:
-        print("Error al agregar o actualizar el registro de asistencia:", e)
+        message = f'Error al agregar o actualizar el registro de asistencia del alumno {username}: {e}'
     finally:
         conn.close()
+        return message
+        
 # Obtengo la lista de inasistencias de un estudiante
 def get_student_asistance(username):
     # Abro la conexión con la base de datos

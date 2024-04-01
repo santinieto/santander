@@ -381,8 +381,20 @@ def fetch_date_in_db(target_date=None):
     return target_date
 
 @app.get("/edit_asistance/")
-def justify_absent(username: str, asistance: str, justification: str, date: str):
-    return {'mesage': 'message'}
+def edit_asistance(username: str, present: str, justification: str, date: str):
+    
+    # Verificar si el usuario está autenticado
+    if not is_authenticated():
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Debe iniciar sesión para modificar la asistencia.")
+    
+    # Verificar si el usuario tiene permisos para registrar asistencia
+    if get_user_role() == 'student':
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="El registro de asistencia solo puede ser modificado por profesores o preceptores.")
+    
+    # Registrar la asistencia del estudiante como presente
+    response = db.register_student_asistance(date, username, present, justification)
+
+    return {'mesage': response}
 
 @app.get("/justify_absent/")
 def justify_absent(username: str, date: str = None, justification: str = 'Other-reason'):
