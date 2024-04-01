@@ -422,15 +422,18 @@ El sistema puede cometer errores o simplemente un alumno puede olvidar de regist
 > http://localhost:8000/edit_asistance/
 
 # Creacion de alumnos (TBD)
+En una escuela cada año ingresan alumnos nuevos y por este motivo se les provee a los profesores y al administrador la posibilidad de agregar nuevos ingresos mediante la URL.
 
 > http://localhost:8000/add_student/
 
 # Creacion de profesores y preceptores (TBD)
+Dentro de la institución hay un equipo de trabajo el cual puede crecer con el tiempo segun se requiere. Por este motivo el administrador puede crear perfiles para profesores y preceptores.
 
 > http://localhost:8000/add_teacher/
 
 > http://localhost:8000/add_tutor/
 
 # Habilitacion de alumnos (TBD)
+Un alumno puede encontrarse activo o pasivo.
 
 > http://localhost:8000/set_student_status/
