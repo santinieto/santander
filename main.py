@@ -342,12 +342,12 @@ def register_asistance(username: str, date: str = None, present: str = '1', just
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="El registro de asistencia solo puede ser realizado por profesores o preceptores.")
     
     # Obtener la fecha de la base de datos
-    date = fetch_date_in_db(date)
+    date, rain = fetch_date_in_db(date)
     
     # Registrar la asistencia del estudiante como presente
-    db.register_student_asistance(date, username, present, justification)
+    db.register_student_asistance(date, username, present, justification, rain)
     
-    return {"message": f"Se ha cargado la asistencia del alumno {username}",}
+    return {"message": f"Se ha cargado la asistencia del alumno {username}"}
 
 def fetch_date_in_db(target_date=None):
     """
@@ -399,9 +399,53 @@ def fetch_date_in_db(target_date=None):
     
     # Registrar la lista de estudiantes como ausentes
     for student in students_list:
-        db.register_student_asistance(target_date, student, 0, justification)
+        db.register_student_asistance(target_date, student, 0, justification, int(rain))
 
-    return target_date
+    return target_date, int(rain)
+
+@app.get('/view_daily_report/')
+def view_daily_report(date = None):
+    
+    # Verificar si el usuario está autenticado
+    if not is_authenticated():
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Debe iniciar sesión para ver los datos de asistencia.")
+    
+    # Verificar si el usuario tiene permisos para registrar asistencia
+    if get_user_role() == 'student':
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="El registro de asistencia solo puede ser visualizado por profesores o preceptores.")
+    
+    # Utilizar la fecha actual si no se proporciona una fecha específica
+    if date is None:
+        date = get_formatted_date()
+        
+    # Obtengo los datos de los estudiantes:
+    try:
+        data = db.get_asistance_data(date)
+        
+        n_present = len( [row for row in data if row['present'] == 1] )
+        n_absent = len( [row for row in data if row['present'] == 0] )
+        
+        try:
+            asistance = round( n_present / len(data) * 100, 2)
+        except:
+            asistance = 0
+        
+        return {
+            'date': date,
+            'rain': data[0]['rain'],
+            'n_present': n_present,
+            'n_absent': n_absent,
+            'asistance': asistance
+        }
+    except:
+        
+        return {
+            'date': date,
+            'rain': 'Error',
+            'n_present': 'Error',
+            'n_absent': 'Error',
+            'asistance': 'Error'
+        }
 
 @app.get("/edit_asistance/")
 def edit_asistance(username: str, present: str, justification: str, date: str):

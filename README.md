@@ -358,6 +358,33 @@ Si este proceso quiere ser ejecutado por un estudiante, el acceso estaria denega
 
 NOTA: En este caso estoy asumiendo que quien sea responsable de cargar la asistencia esta obteniendo el DNI de cada alumno de manera automatica ya sea un QR, escaneo del DNI, codigo de barras, escaneo de huella digital, escaneo facial, etc. Entiendo que no deberia ser algo que el profesor o preceptor deberia realizar de manera manual. En mi mente el proceso seria (por ejemplo) que hubiera un escaner QR en la puerta del aula conectado a un sistema en el cual el profesor este logeado y cuando el alumno acerca su QR al escaner el registro de asistencia (llamado a la API) se realiza automaticamente.
 
+# Reporte diario
+Los profesores, preceptores y el administrador pueden ver el reporte diario de asistencia del curso mediante la URL:
+
+> http://localhost:8000/view_daily_report/
+
+> http://localhost:8000/view_daily_report/?date=20240325
+
+> {
+>   "date": "20240325",
+>   "rain": 1,
+>   "n_present": 20,
+>   "n_absent": 10,
+>   "asistance": 66.67
+> }
+
+Si se ingresa una fecha incorrecta:
+
+> http://localhost:8000/view_daily_report/?date=135434
+
+> {
+>   "date": "135434",
+>   "rain": "Error",
+>   "n_present": "Error",
+>   "n_absent": "Error",
+>   "asistance": "Error"
+> }
+
 # Justificacion de inasistencias
 Es comprensible que los alumnos presenten ausencias durante el periodo escolar y esto debe ser tenido en cuenta por el sistema. Para ello se provee a los profesores, preceptores y al administrador una herramienta de justificacion de ausencias mediante la URL:
 
@@ -453,7 +480,42 @@ Dentro de la institución hay un equipo de trabajo el cual puede crecer con el t
 
 > http://localhost:8000/add_tutor/
 
-# Habilitacion de alumnos (TBD)
+# Habilitacion de alumnos
 Un alumno puede encontrarse activo o pasivo.
 
 > http://localhost:8000/set_student_status/
+
+Supongamos que el preceptor Mike Barnett con DNI 76073275 quiere inhabilitar al alumno Peter Mcdonald con DNI 13628540. Lo primero que debe hacer es logearse:
+
+> http://localhost:8000/login/?username=76073275&password=29cQDC3a
+
+> {
+>   "message": "Bienvenido preceptor 76073275"
+> }
+
+Ahora debe inhabilitar al alumno:
+
+http://localhost:8000/set_student_status/?username=13628540&status=0
+
+> {
+>   "message": "El estado de activo para el estudiante 13628540 a sido cambiado a 0 satisfactoriamente."
+> }
+
+Ahora el alumno se encuentra inahilitado. Un alumno deshabilitado no se considera para la asistencia del curso, y además queda inhabilitado para visualizar y/o modificar sus datos personales.
+
+Si ahora el 13628540 quiere ver sus datos no podra:
+
+> http://localhost:8000/login/?username=13628540&password=SzB7JUeG
+> http://localhost:8000/my_profile/
+
+> {
+>   "message": "Alumno inhabilitado. No se pueden mostrar los datos. Contacte a su profesor."
+> }
+
+Tampoco puede modificar sus datos:
+
+> http://localhost:8000/update_student/?username=13628540&email=pmcdonald@school.com
+
+> {
+>   "message": "Alumno inhabilitado. No se pueden modificar los datos. Contacte a su profesor."
+> }

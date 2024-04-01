@@ -278,6 +278,7 @@ def fetch_asistance_table():
             """
             CREATE TABLE IF NOT EXISTS asistance (
                 date INTEGER,
+                rain INTEGER,
                 username INTEGER,
                 present BOOL,
                 justification TEXT,
@@ -292,7 +293,7 @@ def fetch_asistance_table():
     except Exception as e:
         return False
     
-def register_student_asistance(date, username, present, justification):
+def register_student_asistance(date, username, present, justification, rain=0):
     # Abro la conexión con la base de datos
     conn = db_open()
     cursor = conn.cursor()
@@ -320,10 +321,10 @@ def register_student_asistance(date, username, present, justification):
             # Si no existe un registro, insertarlo
             cursor.execute(
                 """
-                INSERT INTO asistance (date, username, present, justification, updated_by, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO asistance (date, username, present, justification, rain, updated_by, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
-                (date, username, present, justification, get_user_name(), get_db_format_time())
+                (date, username, present, justification, rain, get_user_name(), get_db_format_time())
             )
         # Guardo los cambios y cierro la conexión
         conn.commit()
@@ -560,3 +561,24 @@ def set_student_status(username, status):
     finally:
         conn.close()
         return message
+
+def get_asistance_data(date):
+    try:
+        # Abro la conexión con la base de datos
+        conn = db_open()
+        cursor = conn.cursor()
+        # Obtener todos los registros de la tabla
+        cursor.execute(
+            """SELECT * FROM asistance
+                WHERE date = ?
+            """,
+            (date,)
+            )
+        data = cursor.fetchall()
+        conn.close()
+        if len(data) > 0:
+            return data
+        else:
+            return {'message': f'No hay datos para mostrar para la fecha {date}'} 
+    except Exception as e:
+        return {'message': f"Error al obtener datos de asistencia para la fecha {date}. {e}" }
