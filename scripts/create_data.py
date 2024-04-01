@@ -27,3 +27,9 @@ if __name__ == '__main__':
     create_teachers(n_teachers = 10)
     create_tutors(n_tutors = 5)
     generate_asistance(n_days = 30)
+    
+    # Exporto los datos
+    db.export_table_to_csv('students', './results/students.csv')
+    db.export_table_to_csv('teachers', './results/teachers.csv')
+    db.export_table_to_csv('tutors', './results/tutors.csv')
+    db.export_table_to_csv('asistance', './results/asistance.csv')

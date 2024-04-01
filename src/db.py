@@ -1,5 +1,6 @@
 import sqlite3
 from src.utils import *
+import csv
 
 # Variables globables
 # Se supone que esto se ejecuta desde el main.py
@@ -446,3 +447,26 @@ def is_valid_date(date):
     finally:
         # Cierro la conexión con la base de datos
         conn.close()
+
+def export_table_to_csv(table_name, csv_file):
+    # Abro la conexión con la base de datos
+    conn = db_open()
+    cursor = conn.cursor()
+
+    # Obtener todos los registros de la tabla
+    cursor.execute(f"SELECT * FROM {table_name}")
+    rows = cursor.fetchall()
+
+    # Obtener los nombres de las columnas
+    column_names = [description[0] for description in cursor.description]
+
+    # Escribir los datos en el archivo CSV
+    with open(csv_file, 'w', newline='') as file:
+        writer = csv.writer(file)
+        # Escribir los nombres de las columnas como la primera fila
+        writer.writerow(column_names)
+        # Escribir los datos de los registros
+        writer.writerows(rows)
+
+    # Cerrar la conexión con la base de datos
+    conn.close()
