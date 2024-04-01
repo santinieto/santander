@@ -56,4 +56,15 @@ Para visualizar la informacion de un estudiante es necesario estar logeado como 
 - Un profesor o un tutor pueden ver la informacion de todos los estudiantes
 
 # Registro de asistencia
-El registro de asistencia solo puede ser realizar por profesores o tutores registrados y logeados en el sistema.
+El registro de asistencia solo puede ser realizar por profesores o tutores registrados y logeados en el sistema. Al momento de registrar la asistencia, el sistema hara uso de la API de Open Meteo para obtener la informacion del clima, en el caso de que el dia sea lluvioso, automaticamente se establecera por defecto el mensaje "Dia lluvioso" para el caso de los alumnos ausentes.
+Si el dia no presenta lluvias, el tutor debera expresar de manera manual los motivos o justificaciones de ausencias para cada alumno segun corresponda.
+La URL basica para el registro de asistencia es http://localhost:/register_asistance/
+
+Luego se puede obtener un reporte del estado curricular de cada alumno en la URL http://localhost:8000/view_students/. Cabe destacar que esto ultimo solo puede ser realizado por profesores o preceptores.
+
+La justificacion de asistencia se puede realizar mediante la URL http://localhost:8000/justify_absent?username=<username>&date=<date>&justificacion=<justification-opton>
+
+# Generacion de estudiantes y profesores
+En la carpeta tests/ se encuentran algunos tests unitarios para las funcionalidades creadas. En el caso de no tener estudiantes ni profesores se pueden crear 5 profesores y 50 estudiantes de manera aleatoria para ejecutar pruebas. Para tal fin solo basta con ejecutar el test unitario con el comando
+
+$ python tests/unitary_tests.py

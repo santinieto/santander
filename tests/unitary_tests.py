@@ -10,7 +10,7 @@ from utils import new_user
 
 class UnitTest(unittest.TestCase):
 
-    def test_create_student(self, nstudents=10):
+    def test_create_student(self, nstudents=50):
         
         for k in range(nstudents):
             # Datos del estudiante
@@ -35,7 +35,7 @@ class UnitTest(unittest.TestCase):
             self.assertEqual(response_data["nationality"], student_data["nationality"])
             self.assertEqual(response_data["email"], student_data["email"])
 
-    def test_create_teacher(self, nteachers = 1):
+    def test_create_teacher(self, nteachers = 5):
         
         for k in range(nteachers):
             # Datos del estudiante

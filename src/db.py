@@ -114,6 +114,23 @@ def get_student_asistance(username):
     finally:
         # Cierro la conexión con la base de datos
         conn.close()
+        
+def set_abset_justification(username, date, justification):
+    # Abro la conexión con la base de datos
+    conn = db_open()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "UPDATE asistance SET justification = ? WHERE username = ? and date = ?", (justification, username, date)
+        )
+    except Exception as e:
+        print("Error al ejecutar la consulta:", e)
+        return False
+    finally:
+        # Cierro la conexión con la base de datos
+        conn.commit()
+        conn.close()
+        return True
 
 # Agregar un estudiante
 def add_teacher(username, password, first_name, last_name, nationality, email):

@@ -197,6 +197,30 @@ def register_asistance():
     # Devuelvo los datos
     return {"date": date, "rain": rain, "present_students": present_students, "absent_students": absent_students}
 
+# Ver los datos de un estudiante
+# http://localhost:8000/justify_absent?username=29186424&date=20240331&justificacion=1
+# http://localhost:8000/justify_absent?username=29186424&date=20240331&justificacion=2
+# http://localhost:8000/justify_absent?username=29186424&date=20240331&justificacion=3
+# http://localhost:8000/justify_absent?username=29186424&date=20240331&justificacion=Other-reason
+@app.get("/justify_absent/")
+def justify_absent(username: str, date: str, justificacion: str):
+    
+    if justificacion == "1":
+        just_txt = 'Enfermedad'
+    elif justificacion == '2':
+        just_txt = 'Tramite personal'
+    elif justificacion == '3':
+        just_txt = 'Consulta medica'
+    else:
+        just_txt = justificacion.replace('-',' ')
+        
+    result = set_abset_justification(username, date, just_txt)
+    
+    if result is True:
+        return {"message": "Actualizacion exitosa"}
+    else:
+        return {"message": "Se produjo un error al actualizar los datos"}
+    
 ############################################################################
 # Gestion de profesores
 ############################################################################
