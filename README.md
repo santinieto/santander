@@ -421,8 +421,16 @@ El sistema puede cometer errores o simplemente un alumno puede olvidar de regist
 
 > http://localhost:8000/edit_asistance/
 
-# Creacion de alumnos
+# Creacion de alumnos (TBD)
 
-# Creacion de profesores y preceptores
+> http://localhost:8000/add_student/
 
-# Habilitacion de alumnos
+# Creacion de profesores y preceptores (TBD)
+
+> http://localhost:8000/add_teacher/
+
+> http://localhost:8000/add_tutor/
+
+# Habilitacion de alumnos (TBD)
+
+> http://localhost:8000/set_student_status/
