@@ -51,6 +51,17 @@ def getHTTPResponse(url, headers = None, responseType = 'page', verbose = False,
         return False
 
 if __name__ == "__main__":
+    
+    # Obtengo el contenido HTML del clima de Google
     page = getHTTPResponse("https://www.google.com/search?q=clima", responseType='page')
-    print( page.find('span', class_='wob_t q8U8x').text )
-    print( page.find('div', class_='wob_dcp').text )
+    
+    # Busco la temperatura
+    temp = float( page.find('span', class_='wob_t q8U8x').text )
+    
+    # Verifico si hay lluvia
+    rain_txt = page.find('img', class_='wob_tci')['src']
+    rain = True if 'rain' in rain_txt else False
+    
+    # Muestro los datos
+    print( f'Temperatura: {temp}' )
+    print( f'Lluvia: {rain}' )

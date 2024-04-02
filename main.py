@@ -384,18 +384,26 @@ def fetch_date_in_db(target_date=None):
     # Obtener datos meteorológicos si la fecha es la fecha actual
     if target_date == sys_date:
         temp = Temperature()
-        temp.fetch_data()
-        rain = temp.last_rain
+        rain, temperature = temp.fetch_data()
     else:
         rain = False
+        temperature = False
         
     # Si la obtencion de temperatura falla, obtengo los datos desde Google
-    try:
-        page = getHTTPResponse("https://www.google.com/search?q=clima", responseType='page')
-        temp_txt = page.find('span', class_='wob_t q8U8x').text
-        weather_txt = page.find('div', class_='wob_dcp').text
-    except:
-        pass
+    if rain is None:
+        try:
+            # Obtengo el contenido HTML del clima de Google
+            page = getHTTPResponse("https://www.google.com/search?q=clima", responseType='page')
+                
+            # Busco la temperatura
+            temperature = float( page.find('span', class_='wob_t q8U8x').text )
+            
+            # Verifico si hay lluvia
+            rain_txt = page.find('img', class_='wob_tci')['src']
+            rain = True if 'rain' in rain_txt else False
+        except:
+            rain = False
+            temperature = 0.0
     
     # Establecer justificación en caso de lluvia
     if rain:

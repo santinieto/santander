@@ -535,7 +535,19 @@ Cabe destacar que la estudiante Pamela Robinson no puede justificar su asistenci
 
 Por ultimo, cabe recordar que en el caso de los dias lluviosos todos los alumnos ausentes tendra su ausencia justificada automaticamente con el motivo "Dia lluvioso".
 
-**NOTA**: En el caso de que no sea posible obtener la informacion del clima a traves de la API de Open Meteo, se propone obtener la misma a traves de un scrapping de la informacion que Google provee. Para tal fin se procedera de la siguiente forma (TBD).
+**NOTA**: En el caso de que no sea posible obtener la informacion del clima a traves de la API de Open Meteo, se propone obtener la misma a traves de un scrapping de la informacion que Google provee. Para tal fin se procedera de la siguiente forma. En escencia lo que se hace es buscar la temperatura y la informacion de lluvia.
+
+Para el caso de la temperatura se busca el elemento del tipo `span` con clases `wob_t q8U8x`:
+
+```
+<span class='wob_t q8U8x'>...</span>
+```
+
+Y para el caso de la informacion de lluvia se busca el nombre de la imagen que indica el clima. Si la misma contiene la palabra `rain` entonces se considera que el dia esta lluvioso.
+
+```
+<img src='NNNNNNNNNNNN'>
+```
 
 ### Correcion de asistencia
 El sistema puede cometer errores o simplemente un alumno puede olvidar de registrar su asistencia al llegar a la escuela. Por este motivo los profesores, preceptores y al administrador pueden corregir estos errores mediante la URL:
