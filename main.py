@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import sqlite3
 import random
 from datetime import datetime
+import json
 import src.db as db
 from src.open_meteo import *
 from src.utils import *
@@ -433,29 +434,44 @@ def view_daily_report(date = None):
     try:
         data = db.get_asistance_data(date)
         
-        n_present = len( [row for row in data if row['present'] == 1] )
-        n_absent = len( [row for row in data if row['present'] == 0] )
+        students_present = [row['username'] for row in data if row['present'] == 1]
+        students_absent = [row['username'] for row in data if row['present'] == 0]
+        
+        n_present = len( students_present )
+        n_absent = len( students_absent )
         
         try:
             asistance = round( n_present / len(data) * 100, 2)
         except:
             asistance = 0
+            
+        stats = {
+                'date': date,
+                'rain': data[0]['rain'],
+                'n_present': n_present,
+                'n_absent': n_absent,
+                'students_present': students_present,
+                'students_absent': students_absent,
+                'asistance': asistance
+            }
+            
+        #  Guardo el reporte diario en un archivo tipo JSON
+        filename = f'./results/daily_report_{date}.json'
+        with open(filename, "w") as archivo:
+            # Escribe el diccionario en el archivo como JSON
+            json.dump(stats, archivo)
         
-        return {
-            'date': date,
-            'rain': data[0]['rain'],
-            'n_present': n_present,
-            'n_absent': n_absent,
-            'asistance': asistance
-        }
+        return stats
     except:
         
         return {
             'date': date,
             'rain': 'Error',
-            'n_present': 'Error',
-            'n_absent': 'Error',
-            'asistance': 'Error'
+            'n_present': '0',
+            'n_absent': '0',
+            'students_present': [],
+            'students_absent': [],
+            'asistance': '0'
         }
 
 @app.get("/edit_asistance/")
