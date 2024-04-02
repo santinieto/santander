@@ -136,9 +136,7 @@ def logoff():
         http://localhost:8000/logoff/
     """
     if is_authenticated():
-        os.environ["USER_AUTHENTICATED"] = 'False'
-        os.environ["USER_USERNAME"] = ''
-        os.environ["USER_ROLE"] = ''
+        close_session()
         return {'message': 'Se ha cerrado la sesión'}
     return {'message': 'No se ha iniciado sesión'}
 
@@ -268,6 +266,9 @@ def get_student_data(username: str):
         if student is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Estudiante no encontrado")
         
+        if str(student['active']) == '0' and get_user_name() == username:
+            return {"message": "Alumno inhabilitado. No se pueden visualizar los datos. Contacte a su profesor."}
+        
         # Obtener la asistencia del estudiante
         n_present, n_absent, present_rate, absent_dates = calc_student_asistance(username)
 
@@ -345,7 +346,10 @@ def register_asistance(username: str, date: str = None, present: str = '1', just
     date, rain = fetch_date_in_db(date)
     
     # Registrar la asistencia del estudiante como presente
-    db.register_student_asistance(date, username, present, justification, rain)
+    if rain is not None:
+        db.register_student_asistance(date, username, present, justification, rain)
+    else:
+        db.register_student_asistance(date, username, present, justification)
     
     return {"message": f"Se ha cargado la asistencia del alumno {username}"}
 
@@ -371,11 +375,9 @@ def fetch_date_in_db(target_date=None):
     # Verificar si la fecha ya está en la base de datos
     is_date_loaded = db.is_valid_date(target_date)
     
-    print(is_date_loaded)
-    
     # Si la fecha ya está en la base de datos, no se hace nada más
     if is_date_loaded:
-        return target_date
+        return target_date, None
         
     # Obtener datos meteorológicos si la fecha es la fecha actual
     if target_date == sys_date:

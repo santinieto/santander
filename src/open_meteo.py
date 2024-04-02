@@ -30,15 +30,18 @@ class Temperature:
             "timezone": "auto",
             "forecast_days": 1
         }
-        # Let's limit the API response to just one location
-        self.last_response = self.openmeteo.weather_api(self.url, params=params)[0]
+        try:
+            # Let's limit the API response to just one location
+            self.last_response = self.openmeteo.weather_api(self.url, params=params)[0]
 
-        # Current values. The order of variables needs to be the same as requested.
-        self.last_data = self.last_response.Current()
-        self.last_temperature_2m = self.last_data.Variables(0).Value()
-        self.last_rain = bool( self.last_data.Variables(1).Value() )
-        
-        return self.last_temperature_2m, self.last_rain
+            # Current values. The order of variables needs to be the same as requested.
+            self.last_data = self.last_response.Current()
+            self.last_temperature_2m = self.last_data.Variables(0).Value()
+            self.last_rain = bool( self.last_data.Variables(1).Value() )
+            
+            return self.last_temperature_2m, self.last_rain
+        except:
+            return 0, 0
 
     def __str__(self):
         text  = f"Coordinates {self.last_response.Latitude()}°N {self.last_response.Longitude()}°E\n"

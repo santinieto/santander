@@ -346,7 +346,6 @@ def get_student_asistance(username):
         )
         return cursor.fetchall()
     except Exception as e:
-        print("Error al ejecutar la consulta:", e)
         return False
     finally:
         # Cierro la conexión con la base de datos
@@ -369,7 +368,6 @@ def set_abset_justification(username, date, justification):
             (justification, get_db_format_time(), get_user_name(), username, date)
         )
     except Exception as e:
-        print("Error al ejecutar la consulta:", e)
         return False
     finally:
         # Cierro la conexión con la base de datos
@@ -451,7 +449,6 @@ def is_valid_student(username, password):
         else:
             return False
     except Exception as e:
-        print("Error al ejecutar la consulta:", e)
         return False
     finally:
         # Cierro la conexión con la base de datos
@@ -471,7 +468,6 @@ def is_valid_teacher(username, password):
         else:
             return False
     except Exception as e:
-        print("Error al ejecutar la consulta:", e)
         return False
     finally:
         # Cierro la conexión con la base de datos
@@ -491,7 +487,6 @@ def is_valid_tutor(username, password):
         else:
             return False
     except Exception as e:
-        print("Error al ejecutar la consulta:", e)
         return False
     finally:
         # Cierro la conexión con la base de datos
@@ -511,7 +506,6 @@ def is_valid_date(date):
         else:
             return False
     except Exception as e:
-        print("Error al ejecutar la consulta:", e)
         return False
     finally:
         # Cierro la conexión con la base de datos

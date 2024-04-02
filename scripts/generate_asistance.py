@@ -64,7 +64,8 @@ def generate_asistance(n_days=10):
                 justification = '-'
             
             # Registro la asistencia
-            db.register_student_asistance(date, student, present, justification)
+            message = db.register_student_asistance(date, student, present, justification, rain)
+            print(message)
 
 if __name__ == '__main__':
     generate_asistance(n_days=None)

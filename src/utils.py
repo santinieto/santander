@@ -29,6 +29,12 @@ def set_user_authenticated(username, role):
     os.environ["USER_ROLE"] = role
     os.environ["USER_LOG_TIME"] = datetime.now().strftime("%Y%m%dT%H:%M:%S")
     
+def close_session():
+    os.environ["USER_AUTHENTICATED"] = 'False'
+    os.environ["USER_USERNAME"] = ''
+    os.environ["USER_ROLE"] = ''
+    os.environ["USER_LOG_TIME"] = ''
+    
 def get_user_role():
     return os.environ["USER_ROLE"]
 
