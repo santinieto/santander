@@ -38,6 +38,8 @@ Para esto se propone una solución de arquitectura de software que cumpla con di
 
 Existen otros archivos auxiliares cuya funcion se limita a la vinculacion entre archivos, para tales casos no se requiere de una descripcion especifica. Ejemplos de esto son los archivos `__init__.py`.
 
+Se hace una mencion especial para la carpeta `./results` que sera donde se guardaran todos los archivos generados por el sistema. Tablas de bases de datos, reportes diarios, logeos, etc (no todo esta implementado actualmente pero en general los archivos generados por el sistema deberian ir aqui o en una hipotetica carpeta llamada `./logs/` o `./errors/`).
+
 ### Clonado del repositorio
 Para descargar el repositorio y comenzar a utilizarlo simplemente se debe abrir una consola y ejecutar el siguiente comando donde se quiera tener los archivos:
 
