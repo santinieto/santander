@@ -562,17 +562,118 @@ En la base de datos:
 
 > 20240311 | 16205080 | 1 | Fixed | 65387263 | 20240401T19:56:19
 
-### Creacion de alumnos (TBD)
+### Creacion de alumnos
 En una escuela cada año ingresan alumnos nuevos y por este motivo se les provee a los profesores y al administrador la posibilidad de agregar nuevos ingresos mediante la URL.
 
 > http://localhost:8000/add_student/
 
-### Creacion de profesores y preceptores (TBD)
-Dentro de la institución hay un equipo de trabajo el cual puede crecer con el tiempo segun se requiere. Por este motivo el administrador puede crear perfiles para profesores y preceptores.
+En este caso particular, la creacion de perfiles de estudiante se realiza a traves del verbo POST. Debido a esto, los datos del estudiante deben ser brindados al sistema en formato JSON. Para esto se proponen algunos tests unitarios alojados en la carpeta `./tests`. A modo de ejemplo se creara a un alumno de prueba:
+
+```
+student_data = {
+                    "username": '123456789',
+                    "password": '123456789',
+                    "first_name": 'foo',
+                    "last_name": 'foo',
+                    "nationality": 'foo',
+                    "email": 'foo',
+                    "active": '1',
+                }
+```
+
+Estos son los parametros por defecto en el test unitario pero pueden ser cambiados sin problema. En la carpeta `./utils/` se dispone de un script para generar un perfil aleatorio mediante el metodo `new_user()`.
+Para correr el test unitario se debe ejecutar el comando:
+
+> $ python tests\create_student_test.py
+
+El resultado del test deberia ser similar a:
+
+```
+(base) C:\Users\santi\OneDrive\Desktop\santander>python tests\create_student_test.py
+*************************************************
+* test_create_student_error                     *
+*************************************************
+HTTP response code: 422
+HTTP response body: {'detail': [{'type': 'int_parsing', 'loc': ['body', 'username'], 'msg': 'Input should be a valid integer, unable to parse string as an integer', 'input': 'foo', 'url': 'https://errors.pydantic.dev/2.6/v/int_parsing'}, {'type': 'missing', 'loc': ['body', 'nationality'], 'msg': 'Field required', 'input': {'username': 'foo', 'password': 'abc123', 'first_name': 'foo', 'last_name': 'foo'}, 'url': 'https://errors.pydantic.dev/2.6/v/missing'}, {'type': 'missing', 'loc': ['body', 'email'], 'msg': 'Field required', 'input': {'username': 'foo', 'password': 'abc123', 'first_name': 'foo', 'last_name': 'foo'}, 'url': 'https://errors.pydantic.dev/2.6/v/missing'}, {'type': 'missing', 'loc': ['body', 'active'], 'msg': 'Field required', 'input': {'username': 'foo', 'password': 'abc123', 'first_name': 'foo', 'last_name': 'foo'}, 'url': 'https://errors.pydantic.dev/2.6/v/missing'}]}
+.*************************************************
+* test_create_students                          *
+*************************************************
+HTTP response code: 200
+HTTP response body: {'username': 123456789, 'password': '123456789', 'first_name': 'foo', 'last_name': 'foo', 'nationality': 'foo', 'email': 'foo', 'active': '1', 'message': 'El estudiante se ha creado correctamente'}
+.
+----------------------------------------------------------------------
+Ran 2 tests in 0.058s
+
+OK
+
+(base) C:\Users\santi\OneDrive\Desktop\santander>
+```
+
+El test unitario ejecuta dos escenarios:
+1. Intenta crear un usuario sin brindar toda la informacion necesaria
+2. Crea un usuario de prueba
+
+Si ambos tests unitarios fueron ejecutados correctamente, la herramienta deberia decir `OK` al final de los mismos.
+
+**NOTA**: El servidor debe estar encendido para poder ejecutar este test.
+
+### Creacion de profesores y preceptores
+Dentro de la institución hay un equipo de trabajo el cual puede crecer con el tiempo segun se requiere. Por este motivo el administrador puede crear perfiles para profesores y preceptores. Las URLs para llevar a cabo esta acciones son:
 
 > http://localhost:8000/add_teacher/
-
 > http://localhost:8000/add_tutor/
+
+De igual forma que con la creacion de alumnos se crean tests unitarios para probar estas funcionalidades.
+
+Se puede ejecutar tanto el test unitario para crear profesores:
+
+```
+(base) C:\Users\santi\OneDrive\Desktop\santander>python tests\create_teacher_test.py
+*************************************************
+* test_create_teacher_error                     *
+*************************************************
+HTTP response code: 422
+HTTP response body: {'detail': [{'type': 'int_parsing', 'loc': ['body', 'username'], 'msg': 'Input should be a valid integer, unable to parse string as an integer', 'input': 'foo', 'url': 'https://errors.pydantic.dev/2.6/v/int_parsing'}, {'type': 'missing', 'loc': ['body', 'nationality'], 'msg': 'Field required', 'input': {'username': 'foo', 'password': 'abc123', 'first_name': 'foo', 'last_name': 'foo'}, 'url': 'https://errors.pydantic.dev/2.6/v/missing'}, {'type': 'missing', 'loc': ['body', 'email'], 'msg': 'Field required', 'input': {'username': 'foo', 'password': 'abc123', 'first_name': 'foo', 'last_name': 'foo'}, 'url': 'https://errors.pydantic.dev/2.6/v/missing'}]}
+.*************************************************
+* test_create_teachers                          *
+*************************************************
+HTTP response code: 200
+HTTP response body: {'username': 123456789, 'password': '123456789', 'first_name': 'foo', 'last_name': 'foo', 'nationality': 'foo', 'email': 'foo', 'message': 'El profesor 123456789 se ha creado correctamente.'}
+.
+----------------------------------------------------------------------
+Ran 2 tests in 0.053s
+
+OK
+
+(base) C:\Users\santi\OneDrive\Desktop\santander>
+```
+
+Como para crear preceptores:
+
+```
+(base) C:\Users\santi\OneDrive\Desktop\santander>python tests\create_tutor_test.py
+*************************************************
+* test_create_tutor_error                       *
+*************************************************
+HTTP response code: 422
+HTTP response body: {'detail': [{'type': 'int_parsing', 'loc': ['body', 'username'], 'msg': 'Input should be a valid integer, unable to parse string as an integer', 'input': 'foo', 'url': 'https://errors.pydantic.dev/2.6/v/int_parsing'}, {'type': 'missing', 'loc': ['body', 'nationality'], 'msg': 'Field required', 'input': {'username': 'foo', 'password': 'abc123', 'first_name': 'foo', 'last_name': 'foo'}, 'url': 'https://errors.pydantic.dev/2.6/v/missing'}, {'type': 'missing', 'loc': ['body', 'email'], 'msg': 'Field required', 'input': {'username': 'foo', 'password': 'abc123', 'first_name': 'foo', 'last_name': 'foo'}, 'url': 'https://errors.pydantic.dev/2.6/v/missing'}]}
+.*************************************************
+* test_create_tutors                            *
+*************************************************
+HTTP response code: 200
+HTTP response body: {'username': 123456789, 'password': '123456789', 'first_name': 'foo', 'last_name': 'foo', 'nationality': 'foo', 'email': 'foo', 'message': 'El preceptor 123456789 se ha creado correctamente.'}
+.
+----------------------------------------------------------------------
+Ran 2 tests in 0.057s
+
+OK
+
+(base) C:\Users\santi\OneDrive\Desktop\santander>
+```
+
+Si los tests unitarios fueron ejecutados correctamente, la herramienta deberia decir `OK` al final de los mismos.
+
+**NOTA**: El servidor debe estar encendido para poder ejecutar estos tests.
 
 ### Habilitacion de alumnos
 Un alumno puede encontrarse con estado activo (1) o pasivo (0).

@@ -4,6 +4,11 @@ import requests
 class UnitTest(unittest.TestCase):
 
     def test_create_teachers(self, nteachers=1):
+        
+        print("*************************************************")
+        print("* test_create_teachers                          *")
+        print("*************************************************")
+        
         # Se inicia sesion como administrador
         response = requests.get(
             "http://127.0.0.1:8000/login/",
@@ -53,6 +58,11 @@ class UnitTest(unittest.TestCase):
             )
 
     def test_create_teacher_error(self):
+        
+        print("*************************************************")
+        print("* test_create_teacher_error                     *")
+        print("*************************************************")
+        
         # Se inicia sesion como administrador
         response = requests.get(
             "http://127.0.0.1:8000/login/",

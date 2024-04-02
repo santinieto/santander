@@ -401,7 +401,15 @@ def add_teacher(username, password, first_name, last_name, nationality, email):
         # Guardo los cambios y cierro la conexion
         conn.commit()
         conn.close()
-        return {'message': 'El profesor se ha creado correctamente.'}
+        return {
+            "username": username,
+            "password": password,
+            "first_name": first_name,
+            "last_name": last_name,
+            "nationality": nationality,
+            "email": email,
+            "message": f"El profesor {username} se ha creado correctamente."
+        }
     except Exception as e:
         return {'message': f'Se ha producido un error al crear el profesor. {e}'}
 
@@ -431,7 +439,15 @@ def add_tutor(username, password, first_name, last_name, nationality, email):
         # Guardo los cambios y cierro la conexion
         conn.commit()
         conn.close()
-        return {'message': 'El preceptor se ha creado correctamente.'}
+        return {
+            "username": username,
+            "password": password,
+            "first_name": first_name,
+            "last_name": last_name,
+            "nationality": nationality,
+            "email": email,
+            "message": f"El preceptor {username} se ha creado correctamente."
+        }
     except Exception as e:
         return {'message': f'Se ha producido un error al crear el preceptor. {e}'}
 
