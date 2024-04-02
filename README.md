@@ -38,7 +38,7 @@ Para esto se propone una solución de arquitectura de software que cumpla con di
 
 Existen otros archivos auxiliares cuya funcion se limita a la vinculacion entre archivos, para tales casos no se requiere de una descripcion especifica. Ejemplos de esto son los archivos `__init__.py`.
 
-Se hace una mencion especial para la carpeta `./results` que sera donde se guardaran todos los archivos generados por el sistema. Tablas de bases de datos, reportes diarios, logeos, etc (no todo esta implementado actualmente pero en general los archivos generados por el sistema deberian ir aqui o en una hipotetica carpeta llamada `./logs/` o `./errors/`).
+Se hace una mencion especial para la carpeta `./results/` que sera donde se guardaran todos los archivos generados por el sistema. Tablas de bases de datos, reportes diarios, logeos, etc (no todo esta implementado actualmente pero en general los archivos generados por el sistema deberian ir aqui o en una hipotetica carpeta llamada `./logs/` o `./errors/`).
 
 ### Clonado del repositorio
 Para descargar el repositorio y comenzar a utilizarlo simplemente se debe abrir una consola y ejecutar el siguiente comando donde se quiera tener los archivos:
@@ -462,6 +462,8 @@ Si se ingresa una fecha incorrecta:
   "asistance": "Error"
 }
 ```
+
+**NOTA**: Cuando se cree un reporte diario valido, el mismo sera alojado en la carpeta `./results/` bajo el nombre `daily_report_YYYYMMDD.json`.
 
 ### Justificacion de inasistencias
 Es comprensible que los alumnos presenten ausencias durante el periodo escolar y esto debe ser tenido en cuenta por el sistema. Para ello se provee a los profesores, preceptores y al administrador una herramienta de justificacion de ausencias mediante la URL:
