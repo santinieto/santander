@@ -8,6 +8,7 @@ import src.db as db
 from src.open_meteo import *
 from src.utils import *
 from src.models import *
+from src.scrap import *
 
 # Creación de la aplicación FastAPI
 app = FastAPI()
@@ -387,6 +388,14 @@ def fetch_date_in_db(target_date=None):
     else:
         rain = False
         
+    # Si la obtencion de temperatura falla, obtengo los datos desde Google
+    try:
+        page = getHTTPResponse("https://www.google.com/search?q=clima", responseType='page')
+        temp_txt = page.find('span', class_='wob_t q8U8x').text
+        weather_txt = page.find('div', class_='wob_dcp').text
+    except:
+        pass
+    
     # Establecer justificación en caso de lluvia
     if rain:
         justification = 'Dia lluvioso'
