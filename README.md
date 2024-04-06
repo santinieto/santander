@@ -738,3 +738,9 @@ Tampoco puede modificar sus datos:
   "message": "Alumno inhabilitado. No se pueden modificar los datos. Contacte a su profesor."
 }
 ```
+
+### Trabajo a futuro
+1. Manejar una encriptacion de contraseñas
+2. Modificar las cosas para que se pueda logear más de un usuario al mismo tiempo
+3. Incorporar https://swagger.io/
+4. Utilizar Postman para interactuar con el servidor
